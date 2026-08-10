@@ -21,6 +21,12 @@ if (!sessionStorage.getItem('token')) {
     }
   }
 
+  //Logout function to clear session and redirect to login
+  function logout() {
+      sessionStorage.removeItem('token');
+      window.location.replace('login.html');
+    }
+
   // Cargar y procesar puntuaciones para el Leaderboard
   async function loadLeaderboardData() {
     const tbody = document.getElementById('tbl-leaderboard');
