@@ -5,11 +5,13 @@ const mongoose = require('mongoose');
 const proyectoRoutes = require('./routes/proyectoRoutes');
 const juezRoutes = require('./routes/juezRoutes');
 const estudianteRoutes = require('./routes/estudianteRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use('/api/auth', authRoutes);
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)

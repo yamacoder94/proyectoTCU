@@ -1,5 +1,8 @@
 // public/app.js
-
+// Add this at the very top of your app.js or inside index.html
+if (!localStorage.getItem('token')) {
+  window.location.href = 'login.html';
+}
 // Point directly to your local Express routes
   const API_URL = "/api";
 
