@@ -17,6 +17,11 @@ app.use('/api/auth', authRoutes);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB successfully'))
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
+
+// In server.js, place this BEFORE your express.static line
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/login.html');
+});
   
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
