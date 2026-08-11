@@ -45,89 +45,6 @@
     .view-section { display: none; }
     .view-section.active { display: block; }
 
-    /* Styling for Table Action Buttons */
-.btn-action {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.8rem;
-  transition: 0.2s;
-}
-.btn-edit {
-  background-color: var(--accent);
-  color: #000;
-}
-.btn-edit:hover {
-  background-color: var(--accent-hover);
-}
-.btn-cancel {
-  background-color: #64748b;
-  color: #fff;
-  display: none; /* Hidden by default */
-}
-.btn-cancel:hover {
-  background-color: #475569;
-}
-
-/* Controles de Paginación */
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
-  background-color: var(--sidebar-bg);
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid #475569;
-}
-
-.pagination-limit {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.pagination-limit select {
-  background-color: var(--bg-dark);
-  color: var(--text);
-  border: 1px solid #475569;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.9rem;
-}
-
-.btn-page {
-  background-color: var(--card-bg);
-  color: var(--text);
-  padding: 6px 12px;
-  border: 1px solid #475569;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.2s;
-}
-
-.btn-page:hover:not(:disabled) {
-  background-color: var(--accent);
-  color: #000;
-}
-
-.btn-page:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
     /* KPIs Grid */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .kpi-card { background: var(--sidebar-bg); border-radius: 8px; padding: 16px; border: 1px solid #475569; }
@@ -210,53 +127,24 @@
         </thead>
         <tbody id="tbl-leaderboard"></tbody>
       </table>
-
-      <!-- Controles de Paginación -->
-      <div class="pagination-container">
-        <div class="pagination-limit">
-          <label for="page-size">Mostrar por página:</label>
-          <select id="page-size" onchange="cambiarTamanoPagina(this.value)">
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-        <div class="pagination-controls">
-          <button id="btn-prev-page" class="btn-page" onclick="cambiarPagina(-1)">◀ Anterior</button>
-          <span id="page-info">Página 1 de 1</span>
-          <button id="btn-next-page" class="btn-page" onclick="cambiarPagina(1)">Siguiente ▶</button>
-        </div>
-      </div>
     </div>
 
     <!-- SECCIÓN ESTUDIANTES -->
     <div id="sec-estudiantes" class="view-section">
       <div class="header-bar"><h1>Gestión de Estudiantes</h1></div>
       <div class="form-container">
-        <form id="form-estudiante" onsubmit="guardarEstudiante(event)">
-          <!-- Hidden ID input for updates -->
-          <input type="hidden" id="est-id">
-          
+        <form onsubmit="guardarEstudiante(event)">
           <div class="form-grid">
             <div class="input-group"><label>Id Proyecto</label><input type="text" id="est-proid" required></div>
             <div class="input-group"><label>Nombre Completo</label><input type="text" id="est-nombre" required></div>
             <div class="input-group"><label>Correo Electrónico</label><input type="email" id="est-correo" required></div>
             <div class="input-group"><label>Carrera</label><input type="text" id="est-carrera" required></div>
           </div>
-          <button type="submit" id="btn-submit-est" class="btn-submit">Agregar Estudiante</button>
-          <button type="button" id="btn-cancel-est" class="btn-action btn-cancel" onclick="cancelarEdicion('est')">Cancelar</button>
+          <button type="submit" class="btn-submit">Agregar Estudiante</button>
         </form>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Carrera</th>
-            <th>Acciones</th> <!-- Added column -->
-          </tr>
-        </thead>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Carrera</th></tr></thead>
         <tbody id="tbl-estudiantes"></tbody>
       </table>
     </div>
@@ -265,29 +153,19 @@
     <div id="sec-jueces" class="view-section">
       <div class="header-bar"><h1>Gestión de Jueces</h1></div>
       <div class="form-container">
-        <form id="form-juez" onsubmit="guardarJuez(event)">
-          <!-- Hidden ID input for updates -->
-          <input type="hidden" id="juez-id">
-
+        <form onsubmit="guardarJuez(event)">
           <div class="form-grid">
+            <!-- <div class="input-group"><label>ID Juez</label><input type="text" id="juez-id" required></div>-->
+            
             <div class="input-group"><label>Nombre Completo</label><input type="text" id="juez-nombre" required></div>
             <div class="input-group"><label>Correo Electrónico</label><input type="email" id="juez-correo" required></div>
             <div class="input-group"><label>Especialidad</label><input type="text" id="juez-esp" required></div>
           </div>
-          <button type="submit" id="btn-submit-juez" class="btn-submit">Agregar Juez</button>
-          <button type="button" id="btn-cancel-juez" class="btn-action btn-cancel" onclick="cancelarEdicion('juez')">Cancelar</button>
+          <button type="submit" class="btn-submit">Agregar Juez</button>
         </form>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Especialidad</th>
-            <th>Acciones</th> <!-- Added column -->
-          </tr>
-        </thead>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Especialidad</th></tr></thead>
         <tbody id="tbl-jueces"></tbody>
       </table>
     </div>
@@ -296,29 +174,20 @@
     <div id="sec-proyectos" class="view-section">
       <div class="header-bar"><h1>Gestión de Proyectos</h1></div>
       <div class="form-container">
-        <form id="form-proyecto" onsubmit="guardarProyecto(event)">
-          <!-- Hidden ID input for updates -->
-          <input type="hidden" id="proy-id">
-
+        <!-- <form onsubmit="handleFormSubmit(event, 'Proyectos', ['proy-id', 'proy-nombre', 'proy-desc', 'proy-integ'])"> -->
+        <form onsubmit="guardarProyecto(event)">
           <div class="form-grid">
+            <!-- <div class="input-group"><label>ID Proyecto</label><input type="text" id="proy-id" required></div> -->
+            
             <div class="input-group"><label>Nombre del Proyecto</label><input type="text" id="proy-nombre" required></div>
             <div class="input-group"><label>Descripción</label><input type="text" id="proy-desc" required></div>
             <div class="input-group"><label>Integrantes</label><input type="text" id="proy-integ" placeholder="Ej: Ana, Luis" required></div>
           </div>
-          <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
-          <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>
+          <button type="submit" class="btn-submit">Agregar Proyecto</button>
         </form>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Proyecto</th>
-            <th>Descripción</th>
-            <th>Integrantes</th>
-            <th>Acciones</th> <!-- Added column -->
-          </tr>
-        </thead>
+        <thead><tr><th>ID</th><th>Proyecto</th><th>Descripción</th><th>Integrantes</th></tr></thead>
         <tbody id="tbl-proyectos"></tbody>
       </table>
     </div>
@@ -328,6 +197,6 @@
   <!-- Link your external JS file -->
   <!-- <script src="app.js"></script> -->
   
-  <script src="app03.js"></script>
+  <script src="app02.js"></script>
 </body>
 </html>
