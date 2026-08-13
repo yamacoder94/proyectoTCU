@@ -122,13 +122,18 @@ router.post('/evaluacion-sheet', async (req, res) => {
   try {
     const { tituloProyecto, total, nombreJuez } = req.body;
 
-    // Search project by title
+    // Search project by title (case-insensitive)
     const proyecto = await Proyecto.findOne({ 
       tituloProyecto: { $regex: new RegExp(`^${tituloProyecto.trim()}$`, 'i') } 
     });
 
     if (!proyecto) {
       return res.status(404).json({ message: `Proyecto "${tituloProyecto}" no encontrado en MongoDB.` });
+    }
+
+    // SAFEGUARD: Initialize evaluacion array if it is undefined or null
+    if (!Array.isArray(proyecto.evaluacion)) {
+      proyecto.evaluacion = [];
     }
 
     // Build the evaluation object matching your schema structure
@@ -147,7 +152,7 @@ router.post('/evaluacion-sheet', async (req, res) => {
     // Push into the evaluacion array
     proyecto.evaluacion.push(nuevaEvaluacion);
 
-    // Save triggers your MongoDB Atlas Trigger / pre-save hook
+    // Save changes to database
     await proyecto.save();
 
     res.json({ 
