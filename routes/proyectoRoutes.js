@@ -136,6 +136,7 @@ router.post('/evaluacion-sheet', async (req, res) => {
 });
 */
 
+/* Version that threw successful but did not update the document in MongoDB. Using $push directly in updateOne should work, but let's ensure we are using the correct query and update syntax.
 router.post('/evaluacion-sheet', async (req, res) => {
   try {
     const { tituloProyecto, total, nombreJuez } = req.body;
@@ -169,6 +170,54 @@ router.post('/evaluacion-sheet', async (req, res) => {
 
     res.json({ 
       message: 'Evaluación agregada con éxito',
+      evaluacionAgregada: nuevaEvaluacion
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+*/
+router.post('/evaluacion-sheet', async (req, res) => {
+  try {
+    const { tituloProyecto, total, nombreJuez } = req.body;
+
+    if (!tituloProyecto) {
+      return res.status(400).json({ message: 'El título del proyecto es requerido.' });
+    }
+
+    // 1. Find target project
+    const proyecto = await Proyecto.findOne({ 
+      tituloProyecto: { $regex: new RegExp(`^${tituloProyecto.trim()}$`, 'i') } 
+    });
+
+    if (!proyecto) {
+      return res.status(404).json({ message: `Proyecto "${tituloProyecto}" no encontrado en MongoDB.` });
+    }
+
+    // 2. Build new evaluation object
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: "",
+        nombre: nombreJuez || "Juez Google Sheets"
+      },
+      preguntaA: 0,
+      preguntaB: 0,
+      preguntaC: 0,
+      Total: Number(total) || 0
+    };
+
+    // 3. Perform atomic update using ID
+    await Proyecto.updateOne(
+      { _id: proyecto._id },
+      { $push: { evaluacion: nuevaEvaluacion } }
+    );
+
+    res.json({ 
+      message: 'Evaluación agregada con éxito',
+      documentId: proyecto._id, // Returns ID to verify in Atlas
       evaluacionAgregada: nuevaEvaluacion
     });
 
