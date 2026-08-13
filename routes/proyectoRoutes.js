@@ -85,6 +85,7 @@ router.delete('/:id', async (req, res) => {
 // 6. SPECIAL: Endpoint for Google Sheets Score Submission
 // POST /api/proyectos/submit-score
 // ==========================================
+/*
 router.post('/submit-score', async (req, res) => {
   const { projectId, judgeId, score } = req.body;
 
@@ -109,6 +110,54 @@ router.post('/submit-score', async (req, res) => {
     res.status(200).json({ message: 'Score successfully recorded!', proyecto });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+*/
+
+// ==========================================
+// 6. SPECIAL: Endpoint for Google Sheets Score Submission
+// POST /api/proyectos/evaluacion-sheet
+// ==========================================
+router.post('/evaluacion-sheet', async (req, res) => {
+  try {
+    const { tituloProyecto, total, nombreJuez } = req.body;
+
+    // Search project by title
+    const proyecto = await Proyecto.findOne({ 
+      tituloProyecto: { $regex: new RegExp(`^${tituloProyecto.trim()}$`, 'i') } 
+    });
+
+    if (!proyecto) {
+      return res.status(404).json({ message: `Proyecto "${tituloProyecto}" no encontrado en MongoDB.` });
+    }
+
+    // Build the evaluation object matching your schema structure
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: "",
+        nombre: nombreJuez || "Juez Google Sheets"
+      },
+      preguntaA: 0,
+      preguntaB: 0,
+      preguntaC: 0,
+      Total: Number(total) || 0
+    };
+
+    // Push into the evaluacion array
+    proyecto.evaluacion.push(nuevaEvaluacion);
+
+    // Save triggers your MongoDB Atlas Trigger / pre-save hook
+    await proyecto.save();
+
+    res.json({ 
+      message: 'Evaluación agregada con éxito',
+      evaluacionAgregada: nuevaEvaluacion
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
   }
 });
 
