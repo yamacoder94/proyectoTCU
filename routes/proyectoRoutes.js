@@ -81,43 +81,12 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// ==========================================
-// 6. SPECIAL: Endpoint for Google Sheets Score Submission
-// POST /api/proyectos/submit-score
-// ==========================================
-/*
-router.post('/submit-score', async (req, res) => {
-  const { projectId, judgeId, score } = req.body;
-
-  if (!projectId || !judgeId || score === undefined) {
-    return res.status(400).json({ message: 'projectId, judgeId, and score are required.' });
-  }
-
-  try {
-    const proyecto = await Proyecto.findByIdAndUpdate(
-      projectId,
-      {
-        $push: { scores: { judgeId, score: Number(score) } },
-        $set: { latestScore: Number(score) }
-      },
-      { new: true }
-    );
-
-    if (!proyecto) {
-      return res.status(404).json({ message: 'Proyecto not found' });
-    }
-
-    res.status(200).json({ message: 'Score successfully recorded!', proyecto });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-*/
 
 // ==========================================
 // 6. SPECIAL: Endpoint for Google Sheets Score Submission
 // POST /api/proyectos/evaluacion-sheet
 // ==========================================
+/*
 router.post('/evaluacion-sheet', async (req, res) => {
   try {
     const { tituloProyecto, total, nombreJuez } = req.body;
@@ -154,6 +123,49 @@ router.post('/evaluacion-sheet', async (req, res) => {
 
     // Save changes to database
     await proyecto.save();
+
+    res.json({ 
+      message: 'Evaluación agregada con éxito',
+      evaluacionAgregada: nuevaEvaluacion
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+*/
+
+router.post('/evaluacion-sheet', async (req, res) => {
+  try {
+    const { tituloProyecto, total, nombreJuez } = req.body;
+
+    if (!tituloProyecto) {
+      return res.status(400).json({ message: 'El título del proyecto es requerido.' });
+    }
+
+    // Build evaluation object
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: "",
+        nombre: nombreJuez || "Juez Google Sheets"
+      },
+      preguntaA: 0,
+      preguntaB: 0,
+      preguntaC: 0,
+      Total: Number(total) || 0
+    };
+
+    // Atomic update using $push directly in MongoDB
+    const result = await Proyecto.updateOne(
+      { tituloProyecto: { $regex: new RegExp(`^${tituloProyecto.trim()}$`, 'i') } },
+      { $push: { evaluacion: nuevaEvaluacion } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: `Proyecto "${tituloProyecto}" no encontrado en MongoDB.` });
+    }
 
     res.json({ 
       message: 'Evaluación agregada con éxito',
