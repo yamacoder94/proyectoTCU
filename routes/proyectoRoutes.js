@@ -187,7 +187,7 @@ router.post('/evaluacion-sheet', async (req, res) => {
       return res.status(400).json({ message: 'El título del proyecto es requerido.' });
     }
 
-    // 1. Find target project
+    // 1. Find the project by title (case-insensitive)
     const proyecto = await Proyecto.findOne({ 
       tituloProyecto: { $regex: new RegExp(`^${tituloProyecto.trim()}$`, 'i') } 
     });
@@ -196,7 +196,7 @@ router.post('/evaluacion-sheet', async (req, res) => {
       return res.status(404).json({ message: `Proyecto "${tituloProyecto}" no encontrado en MongoDB.` });
     }
 
-    // 2. Build new evaluation object
+    // 2. Build the new evaluation object
     const nuevaEvaluacion = {
       id: new Date().getTime().toString(),
       juez: {
@@ -209,15 +209,17 @@ router.post('/evaluacion-sheet', async (req, res) => {
       Total: Number(total) || 0
     };
 
-    // 3. Perform atomic update using ID
-    await Proyecto.updateOne(
+    // 3. Push and retrieve the updated document directly from MongoDB
+    const proyectoActualizado = await Proyecto.findOneAndUpdate(
       { _id: proyecto._id },
-      { $push: { evaluacion: nuevaEvaluacion } }
+      { $push: { evaluacion: nuevaEvaluacion } },
+      { new: true, runValidators: false } // Bypasses schema validation & returns updated doc
     );
 
     res.json({ 
       message: 'Evaluación agregada con éxito',
-      documentId: proyecto._id, // Returns ID to verify in Atlas
+      documentId: proyectoActualizado._id,
+      totalEvaluaciones: proyectoActualizado.evaluacion ? proyectoActualizado.evaluacion.length : 0,
       evaluacionAgregada: nuevaEvaluacion
     });
 
