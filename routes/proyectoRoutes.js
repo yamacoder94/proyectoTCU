@@ -321,6 +321,104 @@ router.post('/:id/evaluaciones', async (req, res) => {
   }
 });
 
+//Allows to update Evaluaciones
+
+// PUT /api/proyectos/:id/evaluaciones/:evalId
+router.put('/:id/evaluaciones/:evalId', async (req, res) => {
+  try {
+    const { id, evalId } = req.params;
+    const { total, preguntasDetalle, juezId, userRole } = req.body;
+
+    // 1. Find project
+    const proyecto = await Proyecto.findById(id);
+    if (!proyecto) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    // 2. Find target evaluation inside array
+    const evalIndex = proyecto.evaluacion.findIndex(e => String(e.id) === String(evalId));
+    if (evalIndex === -1) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+
+    const evaluacionExistente = proyecto.evaluacion[evalIndex];
+
+    // 3. Authorization Check: Admin can edit any, Juez can only edit their own
+    const isAdmin = userRole && userRole.toLowerCase() === 'admin';
+    const esDuenio = evaluacionExistente.juez && String(evaluacionExistente.juez.id) === String(juezId);
+
+    if (!isAdmin && !esDuenio) {
+      return res.status(403).json({ message: 'No tiene permisos para editar esta evaluación.' });
+    }
+
+    // 4. Update evaluation fields
+    proyecto.evaluacion[evalIndex].Total = Number(total) || 0;
+    if (preguntasDetalle) {
+      proyecto.evaluacion[evalIndex].preguntas = preguntasDetalle;
+    }
+
+    // Mark mixed array modified and save
+    proyecto.markModified('evaluacion');
+    await proyecto.save();
+
+    res.json({
+      message: 'Evaluación actualizada con éxito',
+      proyecto: proyecto
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+
+
+// ==========================================
+// 8. DELETE /api/proyectos/:id/evaluaciones/:evalId
+// ==========================================
+router.delete('/:id/evaluaciones/:evalId', async (req, res) => {
+  try {
+    const { id, evalId } = req.params;
+    const { juezId, userRole } = req.body;
+
+    // 1. Find project
+    const proyecto = await Proyecto.findById(id);
+    if (!proyecto) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    // 2. Find target evaluation inside array
+    const evalIndex = proyecto.evaluacion.findIndex(e => String(e.id) === String(evalId));
+    if (evalIndex === -1) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+
+    const evaluacionExistente = proyecto.evaluacion[evalIndex];
+
+    // 3. Authorization Check
+    const isAdmin = userRole && userRole.toLowerCase() === 'admin';
+    const esDuenio = evaluacionExistente.juez && String(evaluacionExistente.juez.id) === String(juezId);
+
+    if (!isAdmin && !esDuenio) {
+      return res.status(403).json({ message: 'No tiene permisos para eliminar esta evaluación.' });
+    }
+
+    // 4. Remove item from evaluation array
+    proyecto.evaluacion.splice(evalIndex, 1);
+    proyecto.markModified('evaluacion');
+    await proyecto.save();
+
+    res.json({
+      message: 'Evaluación eliminada con éxito',
+      proyecto: proyecto
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+
 
 
 // ==========================================

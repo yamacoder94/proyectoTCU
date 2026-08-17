@@ -4,7 +4,7 @@ if (!sessionStorage.getItem('token')) {
 
 const API_URL = "/api";
 
-// State to manage independent pagination for both tables
+// State to manage independent pagination for tables
 const paginationState = {
   modelo: { currentPage: 1, pageSize: 10, data: [] },
   steam: { currentPage: 1, pageSize: 10, data: [] },
@@ -15,16 +15,19 @@ const paginationState = {
 // ROL Y PERMISOS DE NAVEGACIÓN
 // ==========================================
 
-function obtenerRolUsuario() {
+function obtenerUsuarioActual() {
   const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
   if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      const role = user.userRole || user.rol || user.role;
-      if (role) return role;
-    } catch (e) {
-      console.error("Error al parsear usuario:", e);
-    }
+    try { return JSON.parse(userStr); } catch (e) {}
+  }
+  return null;
+}
+
+function obtenerRolUsuario() {
+  const user = obtenerUsuarioActual();
+  if (user) {
+    const role = user.userRole || user.rol || user.role;
+    if (role) return role;
   }
 
   const token = sessionStorage.getItem('token');
@@ -86,21 +89,16 @@ function switchTab(tabName) {
     cargarOpcionesProyectos();
     cargarEstudiantes();
   } else if (tabName === 'jueces') {
-    // Resetear formulario para limpiar cualquier valor autocompletado por el navegador
     const form = document.getElementById('form-juez');
     if (form) form.reset();
 
-    // Resetear ID oculto y estado del botón si venías de una edición cancelada
     document.getElementById('juez-id').value = '';
     document.getElementById('btn-submit-juez').textContent = 'Agregar Juez';
     document.getElementById('btn-cancel-juez').style.display = 'none';
 
-    //Carga las opciones de proyectos disponibles
     cargarOpcionesProyectosJuez();
-
-    // Carga la lista de jueces
     cargarJueces();
-  }else if (tabName === 'proyectos') {
+  } else if (tabName === 'proyectos') {
     cargarProyectos();
   } else if (tabName === 'evaluaciones') {
     if (typeof cargarEvaluaciones === 'function') {
@@ -156,8 +154,9 @@ async function enviarDatosAPI(endpoint, payload, reloadCallback, recordId = null
 }
 
 // ==========================================
-// CARGAR DROPDOWN DE PROYECTOS PARA ESTUDIANTES
+// ESTUDIANTES, JUECES, PROYECTOS (CRUD)
 // ==========================================
+
 async function cargarOpcionesProyectos() {
   const select = document.getElementById('est-proid');
   if (!select) return;
@@ -179,10 +178,6 @@ async function cargarOpcionesProyectos() {
   }
 }
 
-// ==========================================
-// GUARDAR / ACTUALIZAR REGISTROS
-// ==========================================
-
 async function guardarEstudiante(event) {
   event.preventDefault();
   const id = document.getElementById('est-id').value;
@@ -196,28 +191,11 @@ async function guardarEstudiante(event) {
   await enviarDatosAPI('estudiantes', payload, cargarEstudiantes, id);
 }
 
-/*
 async function guardarJuez(event) {
   event.preventDefault();
   const id = document.getElementById('juez-id').value;
-
-  const payload = {
-    name: document.getElementById('juez-nombre').value,
-    email: document.getElementById('juez-correo').value,
-    specialty: document.getElementById('juez-esp').value
-  };
-
-  await enviarDatosAPI('jueces', payload, cargarJueces, id);
-}
-  */
-// Guardar o actualizar Juez enviando proyectos seleccionados y contraseña
-async function guardarJuez(event) {
-  event.preventDefault();
-  const id = document.getElementById('juez-id').value;
-
   const selectProyectos = document.getElementById('juez-proyectos');
   
-  // Extraer SOLO el valor del ID (cadena de texto), ignorando opciones vacías
   const selectedProjects = Array.from(selectProyectos.selectedOptions)
     .map(opt => opt.value)
     .filter(val => val.trim() !== '');
@@ -225,7 +203,7 @@ async function guardarJuez(event) {
   const payload = {
     name: document.getElementById('juez-nombre').value,
     email: document.getElementById('juez-correo').value,
-    assignedProjects: selectedProjects // Envia ["id1", "id2", ...]
+    assignedProjects: selectedProjects
   };
 
   const passwordVal = document.getElementById('juez-password').value;
@@ -236,27 +214,10 @@ async function guardarJuez(event) {
   await enviarDatosAPI('jueces', payload, cargarJueces, id);
 }
 
-
-/*
 async function guardarProyecto(event) {
   event.preventDefault();
   const id = document.getElementById('proy-id').value;
 
-  const payload = {
-    title: document.getElementById('proy-nombre').value,
-    description: document.getElementById('proy-desc').value,
-    teamMembers: document.getElementById('proy-integ').value
-  };
-
-  await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
-}
-*/
-
-async function guardarProyecto(event) {
-  event.preventDefault();
-  const id = document.getElementById('proy-id').value;
-
-  // Base payload from user inputs
   const payload = {
     tituloProyecto: document.getElementById('proy-nombre').value,
     centroEducativo: document.getElementById('proy-centro').value,
@@ -264,14 +225,8 @@ async function guardarProyecto(event) {
     ejeTematico: document.getElementById('proy-eje').value
   };
 
-  // When creating a NEW project, supply default empty structure matching sample
   if (!id) {
-    payload.estudiante = [
-      {
-        idEstudiante: "",
-        nombre: ""
-      }
-    ];
+    payload.estudiante = [{ idEstudiante: "", nombre: "" }];
     payload.puntajeTotal = 0;
     payload.evaluacion = [];
     payload.puntajeEscrito = 0;
@@ -279,10 +234,6 @@ async function guardarProyecto(event) {
 
   await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
 }
-
-// ==========================================
-// PREPARAR EDICIÓN (Cargar datos en el form)
-// ==========================================
 
 function prepararEdicionEstudiante(est) {
   document.getElementById('est-id').value = est._id;
@@ -294,25 +245,13 @@ function prepararEdicionEstudiante(est) {
   document.getElementById('btn-submit-est').textContent = '✏️ Actualizar Estudiante';
   document.getElementById('btn-cancel-est').style.display = 'inline-block';
 }
-/*
-function prepararEdicionJuez(juez) {
-  document.getElementById('juez-id').value = juez._id;
-  document.getElementById('juez-nombre').value = juez.name || '';
-  document.getElementById('juez-correo').value = juez.email || '';
-  document.getElementById('juez-esp').value = juez.specialty || '';
-
-  document.getElementById('btn-submit-juez').textContent = '✏️ Actualizar Juez';
-  document.getElementById('btn-cancel-juez').style.display = 'inline-block';
-}
-*/
 
 function prepararEdicionJuez(juez) {
   document.getElementById('juez-id').value = juez._id;
   document.getElementById('juez-nombre').value = juez.name || juez.nombre || '';
   document.getElementById('juez-correo').value = juez.email || '';
-  document.getElementById('juez-password').value = ''; // Vacío por seguridad
+  document.getElementById('juez-password').value = '';
 
-  // Marcar los proyectos previamente asignados
   const assignedIds = (juez.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
   const selectEl = document.getElementById('juez-proyectos');
   if (selectEl) {
@@ -324,18 +263,6 @@ function prepararEdicionJuez(juez) {
   document.getElementById('btn-submit-juez').textContent = '✏️ Actualizar Juez';
   document.getElementById('btn-cancel-juez').style.display = 'inline-block';
 }
-
-/*
-function prepararEdicionProyecto(proy) {
-  document.getElementById('proy-id').value = proy._id;
-  document.getElementById('proy-nombre').value = proy.title || '';
-  document.getElementById('proy-desc').value = proy.description || '';
-  document.getElementById('proy-integ').value = proy.teamMembers || '';
-
-  document.getElementById('btn-submit-proy').textContent = '✏️ Actualizar Proyecto';
-  document.getElementById('btn-cancel-proy').style.display = 'inline-block';
-}
-*/
 
 function prepararEdicionProyecto(proy) {
   document.getElementById('proy-id').value = proy._id;
@@ -404,7 +331,6 @@ function renderEstudiantesPage() {
   const totalItems = state.data.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
 
-  // Boundary checks
   if (state.currentPage > totalPages) state.currentPage = totalPages;
   if (state.currentPage < 1) state.currentPage = 1;
 
@@ -412,7 +338,6 @@ function renderEstudiantesPage() {
   const end = start + Number(state.pageSize);
   const pageData = state.data.slice(start, end);
 
-  // Update UI Pagination Bar
   const pageInfo = document.getElementById('page-info-estudiantes');
   const btnPrev = document.getElementById('btn-prev-estudiantes');
   const btnNext = document.getElementById('btn-next-estudiantes');
@@ -421,7 +346,6 @@ function renderEstudiantesPage() {
   if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
   if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
 
-  // Render Rows
   tbody.innerHTML = '';
 
   if (!pageData || pageData.length === 0) {
@@ -449,36 +373,6 @@ function renderEstudiantesPage() {
     document.getElementById(`btn-edit-est-${item._id}`).addEventListener('click', () => prepararEdicionEstudiante(item));
   });
 }
-/*
-async function cargarJueces() {
-  const tbody = document.getElementById('tbl-jueces');
-  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
-  
-  const data = await fetchDatosAPI('jueces');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">No hay jueces registrados.</td></tr>';
-    return;
-  }
-
-  data.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item._id.substring(0,6)}...</td>
-      <td>${item.name}</td>
-      <td>${item.email}</td>
-      <td>${item.specialty || 'N/A'}</td>
-      <td>
-        <button class="btn-action btn-edit" id="btn-edit-juez-${item._id}">Editar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-
-    document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
-  });
-}
-*/
 
 async function cargarJueces() {
   const tbody = document.getElementById('tbl-jueces');
@@ -495,7 +389,6 @@ async function cargarJueces() {
   data.forEach(item => {
     const nombre = item.name || item.nombre || item.email || 'Sin nombre';
 
-    // Format assigned projects into a readable list
     let proyectosTexto = 'Ninguno';
     if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
       proyectosTexto = item.assignedProjects
@@ -519,7 +412,6 @@ async function cargarJueces() {
   });
 }
 
-// Cargar opciones de proyectos en el selector múltiple de Jueces
 async function cargarOpcionesProyectosJuez() {
   const select = document.getElementById('juez-proyectos');
   if (!select) return;
@@ -539,38 +431,6 @@ async function cargarOpcionesProyectosJuez() {
     select.innerHTML = '<option value="">No hay proyectos disponibles</option>';
   }
 }
-
-/*
-async function cargarProyectos() {
-  const tbody = document.getElementById('tbl-proyectos');
-  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
-  
-  const data = await fetchDatosAPI('proyectos');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">No hay proyectos registrados.</td></tr>';
-    return;
-  }
-
-  data.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item._id.substring(0,6)}...</td>
-      <td>${item.title || item.tituloProyecto}</td>
-      <td>${item.description || '-'}</td>
-      <td>${item.teamMembers || 'N/A'}</td>
-      <td>
-        <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-
-    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
-  });
-}
-
-*/
 
 async function cargarProyectos() {
   const tbody = document.getElementById('tbl-proyectos');
@@ -624,7 +484,6 @@ async function loadLeaderboardData() {
     return;
   }
 
-  // Filter and sort datasets
   paginationState.modelo.data = data
     .filter(p => !p.categoria || p.categoria.toUpperCase() !== 'STEAM')
     .sort((a, b) => (b.latestScore || b.puntajeTotal || 0) - (a.latestScore || a.puntajeTotal || 0));
@@ -633,11 +492,9 @@ async function loadLeaderboardData() {
     .filter(p => p.categoria && p.categoria.toUpperCase() === 'STEAM')
     .sort((a, b) => (b.latestScore || b.puntajeTotal || 0) - (a.latestScore || a.puntajeTotal || 0));
 
-  // Compute total evaluations
   const totalVotes = data.reduce((acc, curr) => acc + (curr.scores ? curr.scores.length : (curr.evaluacion ? curr.evaluacion.length : 0)), 0);
   document.getElementById('kpi-total-votes').textContent = totalVotes;
 
-  // Update Top KPIs
   if (paginationState.modelo.data.length > 0) {
     const topM = paginationState.modelo.data[0];
     const scoreM = topM.latestScore || topM.puntajeTotal || 0;
@@ -654,12 +511,10 @@ async function loadLeaderboardData() {
     document.getElementById('kpi-top-steam').textContent = '-';
   }
 
-  // Render paginated tables
   renderLeaderboardPage('modelo');
   renderLeaderboardPage('steam');
 }
 
-// Render a specific category page
 function renderLeaderboardPage(category) {
   const state = paginationState[category];
   const tbody = document.getElementById(`tbl-leaderboard-${category}`);
@@ -668,7 +523,6 @@ function renderLeaderboardPage(category) {
   const totalItems = state.data.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
 
-  // Boundary checks
   if (state.currentPage > totalPages) state.currentPage = totalPages;
   if (state.currentPage < 1) state.currentPage = 1;
 
@@ -676,7 +530,6 @@ function renderLeaderboardPage(category) {
   const end = start + Number(state.pageSize);
   const pageData = state.data.slice(start, end);
 
-  // Update UI Pagination Bar
   const pageInfo = document.getElementById(`page-info-${category}`);
   const btnPrev = document.getElementById(`btn-prev-${category}`);
   const btnNext = document.getElementById(`btn-next-${category}`);
@@ -685,7 +538,6 @@ function renderLeaderboardPage(category) {
   if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
   if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
 
-  // Populate Rows
   tbody.innerHTML = '';
 
   if (!pageData || pageData.length === 0) {
@@ -694,7 +546,6 @@ function renderLeaderboardPage(category) {
   }
 
   pageData.forEach((item, index) => {
-    // Preserve true rank index across pages
     const rank = start + index + 1;
     const badgeClass = rank === 1 ? 'badge-1' : rank === 2 ? 'badge-2' : rank === 3 ? 'badge-3' : 'badge-other';
     const votesCount = item.scores ? item.scores.length : (item.evaluacion ? item.evaluacion.length : 0);
@@ -719,10 +570,9 @@ function renderLeaderboardPage(category) {
   });
 }
 
-// Handler for changing records per page (10, 15, 20)
 function changePageSize(category, newSize) {
   paginationState[category].pageSize = parseInt(newSize, 10);
-  paginationState[category].currentPage = 1; // Reset to page 1 on page size change
+  paginationState[category].currentPage = 1;
   if (category === 'estudiantes') {
     renderEstudiantesPage();
   } else {
@@ -730,7 +580,6 @@ function changePageSize(category, newSize) {
   }
 }
 
-// Handler for Previous / Next buttons
 function changePage(category, delta) {
   paginationState[category].currentPage += delta;
   if (category === 'estudiantes') {
@@ -741,64 +590,11 @@ function changePage(category, delta) {
 }
 
 // ==========================================
-// Cargando Proyectos Asignados al Juez
+// EVALUACIONES Y RÚBRICA
 // ==========================================
+
 let proyectosCargados = [];
 
-async function cargarEvaluaciones() {
-  const selectEl = document.getElementById('select-eval-proyecto');
-  if (!selectEl) return;
-
-  selectEl.innerHTML = '<option value="">Cargando proyectos...</option>';
-
-  const todosProyectos = await fetchDatosAPI('proyectos');
-  if (!todosProyectos || todosProyectos.length === 0) {
-    selectEl.innerHTML = '<option value="">No hay proyectos disponibles</option>';
-    return;
-  }
-
-  proyectosCargados = todosProyectos;
-  const userRole = obtenerRolUsuario();
-  let proyectosMostrados = todosProyectos;
-
-  if (userRole.toLowerCase() === 'juez') {
-    const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
-    let assignedIds = [];
-    
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        assignedIds = (user.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
-      } catch (e) {
-        console.error("Error al parsear assignedProjects:", e);
-      }
-    }
-
-    if (assignedIds.length > 0) {
-      proyectosMostrados = todosProyectos.filter(p => assignedIds.includes(p._id));
-    }
-  }
-
-  selectEl.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
-
-  if (proyectosMostrados.length === 0) {
-    selectEl.innerHTML = '<option value="">No tiene proyectos asignados</option>';
-    return;
-  }
-
-  proyectosMostrados.forEach(proy => {
-    const option = document.createElement('option');
-    option.value = proy._id;
-    option.textContent = `${proy.tituloProyecto || proy.title} (${proy.centroEducativo || 'Sin Centro'}) [${proy.categoria || 'Sin Cat.'}]`;
-    selectEl.appendChild(option);
-  });
-}
-
-// ==========================================
-// EVALUACIONES: Selección y Guardado
-// ==========================================
-
-// Array of rubric questions for Modelo de Negocio
 const PREGUNTAS_MODELO_NEGOCIO = [
   { id: 'a', label: 'a. Define de forma precisa la operación básica de la potencial empresa.' },
   { id: 'b', label: 'b. Plantea las alternativas de solución que la empresa brindará al problema o necesidad detectada.' },
@@ -819,7 +615,6 @@ const PREGUNTAS_MODELO_NEGOCIO = [
   { id: 'q', label: 'q. Describe las alianzas estratégicas de su propuesta de valor.' }
 ];
 
-// Array of rubric questions for STEM projects (35 questions, max 3 pts each)
 const PREGUNTAS_STEM = [
   { id: '1', label: '1. Delimita los antecedentes del problema o necesidad por solventar.' },
   { id: '2', label: '2. Evidencia claridad en la definición del problema.' },
@@ -858,20 +653,55 @@ const PREGUNTAS_STEM = [
   { id: '35', label: '35. Presenta relación con el informe escrito.' }
 ];
 
+async function cargarEvaluaciones() {
+  const selectEl = document.getElementById('select-eval-proyecto');
+  if (!selectEl) return;
 
-/**
- * Resets the Evaluaciones section back to its clean initial state
- */
-function resetearVistaEvaluaciones() {
-  const select = document.getElementById('select-eval-proyecto');
-  if (select) {
-    select.value = '';
+  selectEl.innerHTML = '<option value="">Cargando proyectos...</option>';
+
+  const todosProyectos = await fetchDatosAPI('proyectos');
+  if (!todosProyectos || todosProyectos.length === 0) {
+    selectEl.innerHTML = '<option value="">No hay proyectos disponibles</option>';
+    return;
   }
-  // Passing empty string hides the form container and resets the table message
-  alSeleccionarProyecto('');
+
+  proyectosCargados = todosProyectos;
+  const userRole = obtenerRolUsuario();
+  let proyectosMostrados = todosProyectos;
+
+  if (userRole.toLowerCase() === 'juez') {
+    const user = obtenerUsuarioActual();
+    let assignedIds = [];
+    if (user) {
+      assignedIds = (user.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
+    }
+
+    if (assignedIds.length > 0) {
+      proyectosMostrados = todosProyectos.filter(p => assignedIds.includes(p._id));
+    }
+  }
+
+  selectEl.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
+
+  if (proyectosMostrados.length === 0) {
+    selectEl.innerHTML = '<option value="">No tiene proyectos asignados</option>';
+    return;
+  }
+
+  proyectosMostrados.forEach(proy => {
+    const option = document.createElement('option');
+    option.value = proy._id;
+    option.textContent = `${proy.tituloProyecto || proy.title} (${proy.centroEducativo || 'Sin Centro'}) [${proy.categoria || 'Sin Cat.'}]`;
+    selectEl.appendChild(option);
+  });
 }
 
-
+function resetearVistaEvaluaciones() {
+  const select = document.getElementById('select-eval-proyecto');
+  if (select) select.value = '';
+  cancelarEdicionEvaluacion();
+  alSeleccionarProyecto('');
+}
 
 function alSeleccionarProyecto(proyectoId) {
   const formContainer = document.getElementById('container-form-evaluacion');
@@ -887,20 +717,21 @@ function alSeleccionarProyecto(proyectoId) {
   const cat = proyecto && proyecto.categoria ? proyecto.categoria.toUpperCase() : '';
   const esStem = cat.includes('STEM') || cat.includes('STEAM');
 
-  questionsContainer.innerHTML = '';
+  if (questionsContainer) {
+    questionsContainer.innerHTML = '';
+    const rubricQuestions = esStem ? PREGUNTAS_STEM : PREGUNTAS_MODELO_NEGOCIO;
+    const maxPts = esStem ? 3 : 5;
 
-  const rubricQuestions = esStem ? PREGUNTAS_STEM : PREGUNTAS_MODELO_NEGOCIO;
-  const maxPts = esStem ? 3 : 5;
-
-  rubricQuestions.forEach(q => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #475569; padding: 8px 0; gap: 12px;';
-    row.innerHTML = `
-      <label for="eval-preg-${q.id}" style="flex: 1; font-size: 0.9rem; font-weight: 500;">${q.label}</label>
-      <input type="number" class="eval-score-input" id="eval-preg-${q.id}" data-id="${q.id}" data-text="${q.label}" min="0" max="${maxPts}" value="0" style="width: 80px; text-align: center; font-weight: bold;" oninput="calcularPuntajeTotalEval()" required>
-    `;
-    questionsContainer.appendChild(row);
-  });
+    rubricQuestions.forEach(q => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #475569; padding: 8px 0; gap: 12px;';
+      row.innerHTML = `
+        <label for="eval-preg-${q.id}" style="flex: 1; font-size: 0.9rem; font-weight: 500;">${q.label}</label>
+        <input type="number" class="eval-score-input" id="eval-preg-${q.id}" data-id="${q.id}" data-text="${q.label}" min="0" max="${maxPts}" value="0" style="width: 80px; text-align: center; font-weight: bold;" oninput="calcularPuntajeTotalEval()" required>
+      `;
+      questionsContainer.appendChild(row);
+    });
+  }
 
   document.getElementById('eval-total').value = 0;
   if (formContainer) formContainer.style.display = 'block';
@@ -917,117 +748,164 @@ function calcularPuntajeTotalEval() {
   document.getElementById('eval-total').value = sum;
 }
 
+// 1. Display evaluations table with conditional Edit button based on role/ownership
+function mostrarDetalleEvaluacion(proyectoId) {
+  const tbody = document.getElementById('tbl-evaluaciones');
+  if (!tbody) return;
 
-// ----------------------------------------------------
-// Updated guardarEvaluacion function
-// ----------------------------------------------------
-/*
-async function guardarEvaluacion(event) {
-  event.preventDefault();
+  tbody.innerHTML = '';
 
-  const proyectoId = document.getElementById('select-eval-proyecto').value;
   if (!proyectoId) {
-    alert('Por favor seleccione un proyecto.');
+    tbody.innerHTML = '<tr><td colspan="3">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
     return;
   }
 
-  const total = Number(document.getElementById('eval-total').value) || 0;
-  const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
-  let nombreJuez = 'Juez';
-  let juezId = '';
+  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
 
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      nombreJuez = user.nombre || user.email || 'Juez';
-      juezId = user.id || user._id || '';
-    } catch (e) {
-      console.error('Error al leer datos de usuario:', e);
-    }
+  if (!proyecto || !proyecto.evaluacion || proyecto.evaluacion.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
+    return;
   }
 
-  const payload = {
-    total: total,
-    nombreJuez: nombreJuez,
-    juezId: juezId,
-    preguntasDetalle: {}
-  };
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+  const currentUserId = currentUser ? (currentUser.id || currentUser._id || '') : '';
+  const isAdmin = userRole.toLowerCase() === 'admin';
 
-  const inputs = document.querySelectorAll('.eval-score-input');
-  inputs.forEach(inp => {
-    const qKey = inp.getAttribute('data-id');
-    const qText = inp.getAttribute('data-text') || qKey;
-    const scoreVal = Number(inp.value) || 0;
+  proyecto.evaluacion.forEach(ev => {
+    const esDuenio = ev.juez && String(ev.juez.id) === String(currentUserId);
+    const puedeEditar = isAdmin || esDuenio;
 
-    payload.preguntasDetalle[qKey] = {
-      texto: qText,
-      puntos: scoreVal
-    };
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${ev.juez ? (ev.juez.nombre || 'Juez') : 'Juez'}</td>
+      <td class="score-cell">${ev.Total || 0} pts</td>
+      <td>
+        ${puedeEditar ? `
+          <button class="btn-action btn-edit" onclick="prepararEdicionEvaluacion('${ev.id}')">Editar</button>
+          <button class="btn-action btn-delete" onclick="eliminarEvaluacion('${ev.id}')">Eliminar</button>
+        ` : '-'}
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
+}
 
+// New function to handle evaluation deletion request
+async function eliminarEvaluacion(evalId) {
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  if (!proyectoId) return;
+
+  if (!confirm('¿Está seguro de que desea eliminar esta evaluación?')) return;
+
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+  const juezId = currentUser ? (currentUser.id || currentUser._id || '') : '';
   const token = sessionStorage.getItem('token');
 
   try {
-    const res = await fetch(`${API_URL}/proyectos/${proyectoId}/evaluaciones`, {
-      method: 'POST',
+    const res = await fetch(`${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}`, {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ juezId, userRole })
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      alert('✅ Evaluación agregada con éxito');
-      
-      document.getElementById('form-evaluacion').reset();
-      document.getElementById('eval-total').value = 0;
+      alert('✅ Evaluación eliminada con éxito');
 
       const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
       if (proyectoIdx !== -1) {
         proyectosCargados[proyectoIdx] = data.proyecto;
       }
-      
-      mostrarDetalleEvaluacion(proyectoId);
+
+      cancelarEdicionEvaluacion();
+      resetearVistaEvaluaciones();
     } else {
-      alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
+      alert('❌ Error: ' + (data.message || 'No se pudo eliminar la evaluación'));
     }
   } catch (err) {
     console.error(err);
     alert('❌ Error de conexión con el servidor');
   }
 }
-*/
+
+// 2. Load evaluation answers into form for editing
+function prepararEdicionEvaluacion(evalId) {
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
+  if (!proyecto || !proyecto.evaluacion) return;
+
+  const evaluacion = proyecto.evaluacion.find(e => String(e.id) === String(evalId));
+  if (!evaluacion) return;
+
+  document.getElementById('eval-id').value = evaluacion.id;
+
+  if (evaluacion.preguntas) {
+    Object.keys(evaluacion.preguntas).forEach(qKey => {
+      const input = document.getElementById(`eval-preg-${qKey}`);
+      if (input) {
+        const item = evaluacion.preguntas[qKey];
+        input.value = typeof item === 'object' ? (item.puntos || 0) : item;
+      }
+    });
+  }
+
+  calcularPuntajeTotalEval();
+
+  const submitBtn = document.getElementById('btn-submit-eval');
+  const cancelBtn = document.getElementById('btn-cancel-eval');
+  if (submitBtn) submitBtn.textContent = '✏️ Actualizar Evaluación';
+  if (cancelBtn) cancelBtn.style.display = 'block';
+
+  const formContainer = document.getElementById('container-form-evaluacion');
+  if (formContainer) formContainer.style.display = 'block';
+}
+
+function cancelarEdicionEvaluacion() {
+  const evalIdInput = document.getElementById('eval-id');
+  if (evalIdInput) evalIdInput.value = '';
+
+  const form = document.getElementById('form-evaluacion');
+  if (form) form.reset();
+
+  const totalEl = document.getElementById('eval-total');
+  if (totalEl) totalEl.value = 0;
+
+  const submitBtn = document.getElementById('btn-submit-eval');
+  const cancelBtn = document.getElementById('btn-cancel-eval');
+  if (submitBtn) submitBtn.textContent = '💾 Guardar Evaluación';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+// 3. Handle both POST (Create) and PUT (Edit) submissions
 async function guardarEvaluacion(event) {
   event.preventDefault();
 
   const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const evalId = document.getElementById('eval-id').value;
+
   if (!proyectoId) {
     alert('Por favor seleccione un proyecto.');
     return;
   }
 
   const total = Number(document.getElementById('eval-total').value) || 0;
-  const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
-  let nombreJuez = 'Juez';
-  let juezId = '';
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
 
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      nombreJuez = user.nombre || user.email || 'Juez';
-      juezId = user.id || user._id || '';
-    } catch (e) {
-      console.error('Error al leer datos de usuario:', e);
-    }
-  }
+  let nombreJuez = currentUser ? (currentUser.nombre || currentUser.email || 'Juez') : 'Juez';
+  let juezId = currentUser ? (currentUser.id || currentUser._id || '') : '';
 
   const payload = {
     total: total,
     nombreJuez: nombreJuez,
     juezId: juezId,
+    userRole: userRole,
     preguntasDetalle: {}
   };
 
@@ -1044,10 +922,15 @@ async function guardarEvaluacion(event) {
   });
 
   const token = sessionStorage.getItem('token');
+  const isUpdate = Boolean(evalId);
+  const url = isUpdate 
+    ? `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}` 
+    : `${API_URL}/proyectos/${proyectoId}/evaluaciones`;
+  const method = isUpdate ? 'PUT' : 'POST';
 
   try {
-    const res = await fetch(`${API_URL}/proyectos/${proyectoId}/evaluaciones`, {
-      method: 'POST',
+    const res = await fetch(url, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -1058,15 +941,14 @@ async function guardarEvaluacion(event) {
     const data = await res.json();
 
     if (res.ok) {
-      alert('✅ Evaluación agregada con éxito');
+      alert(`✅ Evaluación ${isUpdate ? 'actualizada' : 'agregada'} con éxito`);
 
-      // Update in-memory projects array
       const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
       if (proyectoIdx !== -1) {
         proyectosCargados[proyectoIdx] = data.proyecto;
       }
 
-      // Reset view to default state (clears selection, hides form, resets table)
+      cancelarEdicionEvaluacion();
       resetearVistaEvaluaciones();
     } else {
       alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
@@ -1077,35 +959,6 @@ async function guardarEvaluacion(event) {
   }
 }
 
-
-
-function mostrarDetalleEvaluacion(proyectoId) {
-  const tbody = document.getElementById('tbl-evaluaciones');
-  if (!tbody) return;
-
-  tbody.innerHTML = '';
-
-  if (!proyectoId) {
-    tbody.innerHTML = '<tr><td colspan="2">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
-    return;
-  }
-
-  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
-
-  if (!proyecto || !proyecto.evaluacion || proyecto.evaluacion.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="2">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
-    return;
-  }
-
-  proyecto.evaluacion.forEach(ev => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${ev.juez ? (ev.juez.nombre || 'Juez') : 'Juez'}</td>
-      <td class="score-cell">${ev.Total || 0} pts</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================

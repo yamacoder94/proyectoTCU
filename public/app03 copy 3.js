@@ -4,7 +4,7 @@ if (!sessionStorage.getItem('token')) {
 
 const API_URL = "/api";
 
-// State to manage independent pagination for both tables
+// State to manage independent pagination for tables
 const paginationState = {
   modelo: { currentPage: 1, pageSize: 10, data: [] },
   steam: { currentPage: 1, pageSize: 10, data: [] },
@@ -15,16 +15,19 @@ const paginationState = {
 // ROL Y PERMISOS DE NAVEGACIÓN
 // ==========================================
 
-function obtenerRolUsuario() {
+function obtenerUsuarioActual() {
   const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
   if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      const role = user.userRole || user.rol || user.role;
-      if (role) return role;
-    } catch (e) {
-      console.error("Error al parsear usuario:", e);
-    }
+    try { return JSON.parse(userStr); } catch (e) {}
+  }
+  return null;
+}
+
+function obtenerRolUsuario() {
+  const user = obtenerUsuarioActual();
+  if (user) {
+    const role = user.userRole || user.rol || user.role;
+    if (role) return role;
   }
 
   const token = sessionStorage.getItem('token');
@@ -77,27 +80,25 @@ function switchTab(tabName) {
   if (targetSec) targetSec.classList.add('active');
   if (targetBtn) targetBtn.classList.add('active');
 
+  // Reset evaluation form state whenever switching tabs
+  resetearVistaEvaluaciones();
+
   if (tabName === 'leaderboard') {
     loadLeaderboardData();
   } else if (tabName === 'estudiantes') {
     cargarOpcionesProyectos();
     cargarEstudiantes();
   } else if (tabName === 'jueces') {
-    // Resetear formulario para limpiar cualquier valor autocompletado por el navegador
     const form = document.getElementById('form-juez');
     if (form) form.reset();
 
-    // Resetear ID oculto y estado del botón si venías de una edición cancelada
     document.getElementById('juez-id').value = '';
     document.getElementById('btn-submit-juez').textContent = 'Agregar Juez';
     document.getElementById('btn-cancel-juez').style.display = 'none';
 
-    //Carga las opciones de proyectos disponibles
     cargarOpcionesProyectosJuez();
-
-    // Carga la lista de jueces
     cargarJueces();
-  }else if (tabName === 'proyectos') {
+  } else if (tabName === 'proyectos') {
     cargarProyectos();
   } else if (tabName === 'evaluaciones') {
     if (typeof cargarEvaluaciones === 'function') {
@@ -153,8 +154,9 @@ async function enviarDatosAPI(endpoint, payload, reloadCallback, recordId = null
 }
 
 // ==========================================
-// CARGAR DROPDOWN DE PROYECTOS PARA ESTUDIANTES
+// ESTUDIANTES, JUECES, PROYECTOS (CRUD)
 // ==========================================
+
 async function cargarOpcionesProyectos() {
   const select = document.getElementById('est-proid');
   if (!select) return;
@@ -176,10 +178,6 @@ async function cargarOpcionesProyectos() {
   }
 }
 
-// ==========================================
-// GUARDAR / ACTUALIZAR REGISTROS
-// ==========================================
-
 async function guardarEstudiante(event) {
   event.preventDefault();
   const id = document.getElementById('est-id').value;
@@ -193,28 +191,11 @@ async function guardarEstudiante(event) {
   await enviarDatosAPI('estudiantes', payload, cargarEstudiantes, id);
 }
 
-/*
 async function guardarJuez(event) {
   event.preventDefault();
   const id = document.getElementById('juez-id').value;
-
-  const payload = {
-    name: document.getElementById('juez-nombre').value,
-    email: document.getElementById('juez-correo').value,
-    specialty: document.getElementById('juez-esp').value
-  };
-
-  await enviarDatosAPI('jueces', payload, cargarJueces, id);
-}
-  */
-// Guardar o actualizar Juez enviando proyectos seleccionados y contraseña
-async function guardarJuez(event) {
-  event.preventDefault();
-  const id = document.getElementById('juez-id').value;
-
   const selectProyectos = document.getElementById('juez-proyectos');
   
-  // Extraer SOLO el valor del ID (cadena de texto), ignorando opciones vacías
   const selectedProjects = Array.from(selectProyectos.selectedOptions)
     .map(opt => opt.value)
     .filter(val => val.trim() !== '');
@@ -222,7 +203,7 @@ async function guardarJuez(event) {
   const payload = {
     name: document.getElementById('juez-nombre').value,
     email: document.getElementById('juez-correo').value,
-    assignedProjects: selectedProjects // Envia ["id1", "id2", ...]
+    assignedProjects: selectedProjects
   };
 
   const passwordVal = document.getElementById('juez-password').value;
@@ -233,27 +214,10 @@ async function guardarJuez(event) {
   await enviarDatosAPI('jueces', payload, cargarJueces, id);
 }
 
-
-/*
 async function guardarProyecto(event) {
   event.preventDefault();
   const id = document.getElementById('proy-id').value;
 
-  const payload = {
-    title: document.getElementById('proy-nombre').value,
-    description: document.getElementById('proy-desc').value,
-    teamMembers: document.getElementById('proy-integ').value
-  };
-
-  await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
-}
-*/
-
-async function guardarProyecto(event) {
-  event.preventDefault();
-  const id = document.getElementById('proy-id').value;
-
-  // Base payload from user inputs
   const payload = {
     tituloProyecto: document.getElementById('proy-nombre').value,
     centroEducativo: document.getElementById('proy-centro').value,
@@ -261,14 +225,8 @@ async function guardarProyecto(event) {
     ejeTematico: document.getElementById('proy-eje').value
   };
 
-  // When creating a NEW project, supply default empty structure matching sample
   if (!id) {
-    payload.estudiante = [
-      {
-        idEstudiante: "",
-        nombre: ""
-      }
-    ];
+    payload.estudiante = [{ idEstudiante: "", nombre: "" }];
     payload.puntajeTotal = 0;
     payload.evaluacion = [];
     payload.puntajeEscrito = 0;
@@ -276,10 +234,6 @@ async function guardarProyecto(event) {
 
   await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
 }
-
-// ==========================================
-// PREPARAR EDICIÓN (Cargar datos en el form)
-// ==========================================
 
 function prepararEdicionEstudiante(est) {
   document.getElementById('est-id').value = est._id;
@@ -291,25 +245,13 @@ function prepararEdicionEstudiante(est) {
   document.getElementById('btn-submit-est').textContent = '✏️ Actualizar Estudiante';
   document.getElementById('btn-cancel-est').style.display = 'inline-block';
 }
-/*
-function prepararEdicionJuez(juez) {
-  document.getElementById('juez-id').value = juez._id;
-  document.getElementById('juez-nombre').value = juez.name || '';
-  document.getElementById('juez-correo').value = juez.email || '';
-  document.getElementById('juez-esp').value = juez.specialty || '';
-
-  document.getElementById('btn-submit-juez').textContent = '✏️ Actualizar Juez';
-  document.getElementById('btn-cancel-juez').style.display = 'inline-block';
-}
-*/
 
 function prepararEdicionJuez(juez) {
   document.getElementById('juez-id').value = juez._id;
   document.getElementById('juez-nombre').value = juez.name || juez.nombre || '';
   document.getElementById('juez-correo').value = juez.email || '';
-  document.getElementById('juez-password').value = ''; // Vacío por seguridad
+  document.getElementById('juez-password').value = '';
 
-  // Marcar los proyectos previamente asignados
   const assignedIds = (juez.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
   const selectEl = document.getElementById('juez-proyectos');
   if (selectEl) {
@@ -321,18 +263,6 @@ function prepararEdicionJuez(juez) {
   document.getElementById('btn-submit-juez').textContent = '✏️ Actualizar Juez';
   document.getElementById('btn-cancel-juez').style.display = 'inline-block';
 }
-
-/*
-function prepararEdicionProyecto(proy) {
-  document.getElementById('proy-id').value = proy._id;
-  document.getElementById('proy-nombre').value = proy.title || '';
-  document.getElementById('proy-desc').value = proy.description || '';
-  document.getElementById('proy-integ').value = proy.teamMembers || '';
-
-  document.getElementById('btn-submit-proy').textContent = '✏️ Actualizar Proyecto';
-  document.getElementById('btn-cancel-proy').style.display = 'inline-block';
-}
-*/
 
 function prepararEdicionProyecto(proy) {
   document.getElementById('proy-id').value = proy._id;
@@ -401,7 +331,6 @@ function renderEstudiantesPage() {
   const totalItems = state.data.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
 
-  // Boundary checks
   if (state.currentPage > totalPages) state.currentPage = totalPages;
   if (state.currentPage < 1) state.currentPage = 1;
 
@@ -409,7 +338,6 @@ function renderEstudiantesPage() {
   const end = start + Number(state.pageSize);
   const pageData = state.data.slice(start, end);
 
-  // Update UI Pagination Bar
   const pageInfo = document.getElementById('page-info-estudiantes');
   const btnPrev = document.getElementById('btn-prev-estudiantes');
   const btnNext = document.getElementById('btn-next-estudiantes');
@@ -418,7 +346,6 @@ function renderEstudiantesPage() {
   if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
   if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
 
-  // Render Rows
   tbody.innerHTML = '';
 
   if (!pageData || pageData.length === 0) {
@@ -446,36 +373,6 @@ function renderEstudiantesPage() {
     document.getElementById(`btn-edit-est-${item._id}`).addEventListener('click', () => prepararEdicionEstudiante(item));
   });
 }
-/*
-async function cargarJueces() {
-  const tbody = document.getElementById('tbl-jueces');
-  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
-  
-  const data = await fetchDatosAPI('jueces');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">No hay jueces registrados.</td></tr>';
-    return;
-  }
-
-  data.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item._id.substring(0,6)}...</td>
-      <td>${item.name}</td>
-      <td>${item.email}</td>
-      <td>${item.specialty || 'N/A'}</td>
-      <td>
-        <button class="btn-action btn-edit" id="btn-edit-juez-${item._id}">Editar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-
-    document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
-  });
-}
-*/
 
 async function cargarJueces() {
   const tbody = document.getElementById('tbl-jueces');
@@ -492,7 +389,6 @@ async function cargarJueces() {
   data.forEach(item => {
     const nombre = item.name || item.nombre || item.email || 'Sin nombre';
 
-    // Format assigned projects into a readable list
     let proyectosTexto = 'Ninguno';
     if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
       proyectosTexto = item.assignedProjects
@@ -516,7 +412,6 @@ async function cargarJueces() {
   });
 }
 
-// Cargar opciones de proyectos en el selector múltiple de Jueces
 async function cargarOpcionesProyectosJuez() {
   const select = document.getElementById('juez-proyectos');
   if (!select) return;
@@ -536,38 +431,6 @@ async function cargarOpcionesProyectosJuez() {
     select.innerHTML = '<option value="">No hay proyectos disponibles</option>';
   }
 }
-
-/*
-async function cargarProyectos() {
-  const tbody = document.getElementById('tbl-proyectos');
-  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
-  
-  const data = await fetchDatosAPI('proyectos');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">No hay proyectos registrados.</td></tr>';
-    return;
-  }
-
-  data.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item._id.substring(0,6)}...</td>
-      <td>${item.title || item.tituloProyecto}</td>
-      <td>${item.description || '-'}</td>
-      <td>${item.teamMembers || 'N/A'}</td>
-      <td>
-        <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-
-    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
-  });
-}
-
-*/
 
 async function cargarProyectos() {
   const tbody = document.getElementById('tbl-proyectos');
@@ -621,7 +484,6 @@ async function loadLeaderboardData() {
     return;
   }
 
-  // Filter and sort datasets
   paginationState.modelo.data = data
     .filter(p => !p.categoria || p.categoria.toUpperCase() !== 'STEAM')
     .sort((a, b) => (b.latestScore || b.puntajeTotal || 0) - (a.latestScore || a.puntajeTotal || 0));
@@ -630,11 +492,9 @@ async function loadLeaderboardData() {
     .filter(p => p.categoria && p.categoria.toUpperCase() === 'STEAM')
     .sort((a, b) => (b.latestScore || b.puntajeTotal || 0) - (a.latestScore || a.puntajeTotal || 0));
 
-  // Compute total evaluations
   const totalVotes = data.reduce((acc, curr) => acc + (curr.scores ? curr.scores.length : (curr.evaluacion ? curr.evaluacion.length : 0)), 0);
   document.getElementById('kpi-total-votes').textContent = totalVotes;
 
-  // Update Top KPIs
   if (paginationState.modelo.data.length > 0) {
     const topM = paginationState.modelo.data[0];
     const scoreM = topM.latestScore || topM.puntajeTotal || 0;
@@ -651,12 +511,10 @@ async function loadLeaderboardData() {
     document.getElementById('kpi-top-steam').textContent = '-';
   }
 
-  // Render paginated tables
   renderLeaderboardPage('modelo');
   renderLeaderboardPage('steam');
 }
 
-// Render a specific category page
 function renderLeaderboardPage(category) {
   const state = paginationState[category];
   const tbody = document.getElementById(`tbl-leaderboard-${category}`);
@@ -665,7 +523,6 @@ function renderLeaderboardPage(category) {
   const totalItems = state.data.length;
   const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
 
-  // Boundary checks
   if (state.currentPage > totalPages) state.currentPage = totalPages;
   if (state.currentPage < 1) state.currentPage = 1;
 
@@ -673,7 +530,6 @@ function renderLeaderboardPage(category) {
   const end = start + Number(state.pageSize);
   const pageData = state.data.slice(start, end);
 
-  // Update UI Pagination Bar
   const pageInfo = document.getElementById(`page-info-${category}`);
   const btnPrev = document.getElementById(`btn-prev-${category}`);
   const btnNext = document.getElementById(`btn-next-${category}`);
@@ -682,7 +538,6 @@ function renderLeaderboardPage(category) {
   if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
   if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
 
-  // Populate Rows
   tbody.innerHTML = '';
 
   if (!pageData || pageData.length === 0) {
@@ -691,7 +546,6 @@ function renderLeaderboardPage(category) {
   }
 
   pageData.forEach((item, index) => {
-    // Preserve true rank index across pages
     const rank = start + index + 1;
     const badgeClass = rank === 1 ? 'badge-1' : rank === 2 ? 'badge-2' : rank === 3 ? 'badge-3' : 'badge-other';
     const votesCount = item.scores ? item.scores.length : (item.evaluacion ? item.evaluacion.length : 0);
@@ -716,10 +570,9 @@ function renderLeaderboardPage(category) {
   });
 }
 
-// Handler for changing records per page (10, 15, 20)
 function changePageSize(category, newSize) {
   paginationState[category].pageSize = parseInt(newSize, 10);
-  paginationState[category].currentPage = 1; // Reset to page 1 on page size change
+  paginationState[category].currentPage = 1;
   if (category === 'estudiantes') {
     renderEstudiantesPage();
   } else {
@@ -727,7 +580,6 @@ function changePageSize(category, newSize) {
   }
 }
 
-// Handler for Previous / Next buttons
 function changePage(category, delta) {
   paginationState[category].currentPage += delta;
   if (category === 'estudiantes') {
@@ -738,9 +590,68 @@ function changePage(category, delta) {
 }
 
 // ==========================================
-// Cargando Proyectos Asignados al Juez
+// EVALUACIONES Y RÚBRICA
 // ==========================================
+
 let proyectosCargados = [];
+
+const PREGUNTAS_MODELO_NEGOCIO = [
+  { id: 'a', label: 'a. Define de forma precisa la operación básica de la potencial empresa.' },
+  { id: 'b', label: 'b. Plantea las alternativas de solución que la empresa brindará al problema o necesidad detectada.' },
+  { id: 'c', label: 'c. Describe los productos o servicios ofrecidos que brindan valor a los clientes.' },
+  { id: 'd', label: 'd. Evidencia el impacto la potencial empresa desde diversos ámbitos, tanto a corto, como a largo plazo.' },
+  { id: 'e', label: 'e. Argumenta las diferencias que ofrece la potencial empresa con la competencia.' },
+  { id: 'f', label: 'f. Demuestra un buen entendimiento del mercado, la competencia y aspectos financieros.' },
+  { id: 'g', label: 'g. Argumenta con solidez qué hace único al negocio y por qué constituye una buena oportunidad.' },
+  { id: 'h', label: 'h. Demuestra gestión de los recursos de forma sostenible y responsable.' },
+  { id: 'i', label: 'i. Demuestra claridad y coherencia en la exposición del modelo de negocio ante el panel de jueces.' },
+  { id: 'j', label: 'j. Utiliza lenguaje técnico acorde con el nivel académico y el campo del negocio.' },
+  { id: 'k', label: 'k. Evidencia capacidad de comunicación oral y dominio de la propuesta de valor.' },
+  { id: 'l', label: 'l. Define los canales mediante los cuales hará llegar a los clientes la propuesta de valor.' },
+  { id: 'm', label: 'm. Caracteriza el segmento de clientes (necesidades - comportamientos - atributos).' },
+  { id: 'n', label: 'n. Expone una propuesta innovadora y creativa con respecto al mercado.' },
+  { id: 'o', label: 'o. Describe las demandas del segmento de clientes y el seguimiento para asegurar la calidad de los bienes o servicios ofrecidos.' },
+  { id: 'p', label: 'p. Expone las fuentes de ingresos y estructura de costos.' },
+  { id: 'q', label: 'q. Describe las alianzas estratégicas de su propuesta de valor.' }
+];
+
+const PREGUNTAS_STEM = [
+  { id: '1', label: '1. Delimita los antecedentes del problema o necesidad por solventar.' },
+  { id: '2', label: '2. Evidencia claridad en la definición del problema.' },
+  { id: '3', label: '3. Fundamenta la relevancia o utilidad potencial del proyecto.' },
+  { id: '4', label: '4. Define los criterios técnicos utilizados para la solución del problema.' },
+  { id: '5', label: '5. Evidencia la viabilidad del proyecto.' },
+  { id: '6', label: '6. Emplea variedad de fuentes de información confiables para sustentar el proyecto (tesis, libros, artículos, entrevistas, repositorios y páginas Web, entre otros).' },
+  { id: '7', label: '7. Incluye citas bibliográficas relevantes, de forma crítica dentro del texto, que documentan la investigación y desarrollo del proyecto.' },
+  { id: '8', label: '8. Emplea fuentes bibliográficas actualizadas, según el tema abordado en el proyecto.' },
+  { id: '9', label: '9. Define términos o conceptos relevantes para la investigación y desarrollo del proyecto.' },
+  { id: '10', label: '10. Sintetiza la información existente del tema en estudio.' },
+  { id: '11', label: '11. Evidencia la organización lógica de la información recopilada.' },
+  { id: '12', label: '12. Presenta el objetivo general y al menos dos objetivos específicos.' },
+  { id: '13', label: '13. Se plantean de forma clara, precisa y según estructura requerida: verbo en infinitivo, contenido y condición técnica.' },
+  { id: '14', label: '14. Evidencia relación con la propuesta de solución planteada.' },
+  { id: '15', label: '15. Presenta las etapas del proyecto en el cronograma.' },
+  { id: '16', label: '16. Cumple con las etapas establecidas en el cronograma.' },
+  { id: '17', label: '17. Describe paso a paso los procedimientos y técnicas utilizadas para la investigación y desarrollo.' },
+  { id: '18', label: '18. Describe los recursos utilizados para la implementación del proyecto.' },
+  { id: '19', label: '19. Evidencia procesos de mejora continua durante la investigación y desarrollo del proyecto.' },
+  { id: '20', label: '20. Evidencia el desarrollo de ideas novedosas o la aplicación creativa de conocimientos.' },
+  { id: '21', label: '21. Fundamenta los cálculos requeridos para las demostraciones.' },
+  { id: '22', label: '22. Incluye diseños y esquemas claros en relación con el desarrollo del prototipo.' },
+  { id: '23', label: '23. Muestra concordancia entre los resultados obtenidos y los objetivos planteados.' },
+  { id: '24', label: '24. Presenta los datos mediante tablas, diagramas, figuras, gráficos, entre otros, que sustenten los resultados obtenidos.' },
+  { id: '25', label: '25. Evidencia la interpretación de los resultados desde una visión analítica y reflexiva, sin delimitarse a describirlos.' },
+  { id: '26', label: '26. Demuestra resultados (producto) aplicables y útiles en la vida real.' },
+  { id: '27', label: '27. Presenta coherencia entre los diseños y esquemas con respecto al prototipo desarrollado.' },
+  { id: '28', label: '28. Plantea conclusiones relevantes en relación con los objetivos trazados, análisis de datos y prototipado.' },
+  { id: '29', label: '29. Concluye sobre el impacto ambiental, social o económico de la implementación del proyecto.' },
+  { id: '30', label: '30. Presenta una organización clara y lógica, en congruencia con la estructura dada en los lineamientos.' },
+  { id: '31', label: '31. Presenta el documento en formato de doble columna (IEEE, artículo de revista).' },
+  { id: '32', label: '32. Presenta el listado de referencias citadas en el documento, según formato APA vigente.' },
+  { id: '33', label: '33. Evidencia el proceso de investigación y desarrollo realizado.' },
+  { id: '34', label: '34. Cumple con el formato solicitado, según los lineamientos de la ExpoTÉCNICA.' },
+  { id: '35', label: '35. Presenta relación con el informe escrito.' }
+];
 
 async function cargarEvaluaciones() {
   const selectEl = document.getElementById('select-eval-proyecto');
@@ -759,16 +670,10 @@ async function cargarEvaluaciones() {
   let proyectosMostrados = todosProyectos;
 
   if (userRole.toLowerCase() === 'juez') {
-    const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
+    const user = obtenerUsuarioActual();
     let assignedIds = [];
-    
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        assignedIds = (user.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
-      } catch (e) {
-        console.error("Error al parsear assignedProjects:", e);
-      }
+    if (user) {
+      assignedIds = (user.assignedProjects || []).map(p => (typeof p === 'string' ? p : p.id || p._id));
     }
 
     if (assignedIds.length > 0) {
@@ -791,13 +696,17 @@ async function cargarEvaluaciones() {
   });
 }
 
-// ==========================================
-// EVALUACIONES: Selección y Guardado
-// ==========================================
+function resetearVistaEvaluaciones() {
+  const select = document.getElementById('select-eval-proyecto');
+  if (select) select.value = '';
+  cancelarEdicionEvaluacion();
+  alSeleccionarProyecto('');
+}
 
 function alSeleccionarProyecto(proyectoId) {
   const formContainer = document.getElementById('container-form-evaluacion');
-  
+  const questionsContainer = document.getElementById('eval-questions-container');
+
   if (!proyectoId) {
     if (formContainer) formContainer.style.display = 'none';
     mostrarDetalleEvaluacion(proyectoId);
@@ -805,83 +714,178 @@ function alSeleccionarProyecto(proyectoId) {
   }
 
   const proyecto = proyectosCargados.find(p => p._id === proyectoId);
-  const esSteam = proyecto && proyecto.categoria && proyecto.categoria.toUpperCase() === 'STEAM';
+  const cat = proyecto && proyecto.categoria ? proyecto.categoria.toUpperCase() : '';
+  const esStem = cat.includes('STEM') || cat.includes('STEAM');
 
-  // Update Form Labels
-  document.getElementById('lbl-eval-preg-a').textContent = esSteam ? 'Pregunta X (Puntos)' : 'Pregunta A (Puntos)';
-  document.getElementById('lbl-eval-preg-b').textContent = esSteam ? 'Pregunta Y (Puntos)' : 'Pregunta B (Puntos)';
-  document.getElementById('lbl-eval-preg-c').textContent = esSteam ? 'Pregunta Z (Puntos)' : 'Pregunta C (Puntos)';
+  if (questionsContainer) {
+    questionsContainer.innerHTML = '';
+    const rubricQuestions = esStem ? PREGUNTAS_STEM : PREGUNTAS_MODELO_NEGOCIO;
+    const maxPts = esStem ? 3 : 5;
 
-  // Update Table Headers
-  document.getElementById('th-eval-preg-a').textContent = esSteam ? 'Pregunta X' : 'Pregunta A';
-  document.getElementById('th-eval-preg-b').textContent = esSteam ? 'Pregunta Y' : 'Pregunta B';
-  document.getElementById('th-eval-preg-c').textContent = esSteam ? 'Pregunta Z' : 'Pregunta C';
+    rubricQuestions.forEach(q => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #475569; padding: 8px 0; gap: 12px;';
+      row.innerHTML = `
+        <label for="eval-preg-${q.id}" style="flex: 1; font-size: 0.9rem; font-weight: 500;">${q.label}</label>
+        <input type="number" class="eval-score-input" id="eval-preg-${q.id}" data-id="${q.id}" data-text="${q.label}" min="0" max="${maxPts}" value="0" style="width: 80px; text-align: center; font-weight: bold;" oninput="calcularPuntajeTotalEval()" required>
+      `;
+      questionsContainer.appendChild(row);
+    });
+  }
 
+  document.getElementById('eval-total').value = 0;
   if (formContainer) formContainer.style.display = 'block';
 
   mostrarDetalleEvaluacion(proyectoId);
 }
 
 function calcularPuntajeTotalEval() {
-  const a = Number(document.getElementById('eval-preg-a').value) || 0;
-  const b = Number(document.getElementById('eval-preg-b').value) || 0;
-  const c = Number(document.getElementById('eval-preg-c').value) || 0;
+  const scoreInputs = document.querySelectorAll('.eval-score-input');
+  let sum = 0;
+  scoreInputs.forEach(input => {
+    sum += Number(input.value) || 0;
+  });
+  document.getElementById('eval-total').value = sum;
+}
 
-  document.getElementById('eval-total').value = a + b + c;
+// Render evaluation list with dynamic action buttons (Edit and Delete)
+function mostrarDetalleEvaluacion(proyectoId) {
+  const tbody = document.getElementById('tbl-evaluaciones');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  if (!proyectoId) {
+    tbody.innerHTML = '<tr><td colspan="3">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
+    return;
+  }
+
+  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
+
+  if (!proyecto || !proyecto.evaluacion || proyecto.evaluacion.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
+    return;
+  }
+
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+  const currentUserId = currentUser ? (currentUser.id || currentUser._id || '') : '';
+  const isAdmin = userRole.toLowerCase() === 'admin';
+
+  proyecto.evaluacion.forEach(ev => {
+    const esDuenio = ev.juez && String(ev.juez.id) === String(currentUserId);
+    const puedeEditar = isAdmin || esDuenio;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${ev.juez ? (ev.juez.nombre || 'Juez') : 'Juez'}</td>
+      <td class="score-cell">${ev.Total || 0} pts</td>
+      <td>
+        ${puedeEditar ? `
+          <button class="btn-action btn-edit" onclick="prepararEdicionEvaluacion('${ev.id}')">Editar</button>
+          <button class="btn-action btn-delete" onclick="eliminarEvaluacion('${ev.id}')" style="background-color: #ef4444; color: white; margin-left: 4px;">Eliminar</button>
+        ` : '-'}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function prepararEdicionEvaluacion(evalId) {
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
+  if (!proyecto || !proyecto.evaluacion) return;
+
+  const evaluacion = proyecto.evaluacion.find(e => String(e.id) === String(evalId));
+  if (!evaluacion) return;
+
+  document.getElementById('eval-id').value = evaluacion.id;
+
+  if (evaluacion.preguntas) {
+    Object.keys(evaluacion.preguntas).forEach(qKey => {
+      const input = document.getElementById(`eval-preg-${qKey}`);
+      if (input) {
+        const item = evaluacion.preguntas[qKey];
+        input.value = typeof item === 'object' ? (item.puntos || 0) : item;
+      }
+    });
+  }
+
+  calcularPuntajeTotalEval();
+
+  const submitBtn = document.getElementById('btn-submit-eval');
+  const cancelBtn = document.getElementById('btn-cancel-eval');
+  if (submitBtn) submitBtn.textContent = '✏️ Actualizar Evaluación';
+  if (cancelBtn) cancelBtn.style.display = 'block';
+
+  const formContainer = document.getElementById('container-form-evaluacion');
+  if (formContainer) formContainer.style.display = 'block';
+}
+
+function cancelarEdicionEvaluacion() {
+  const evalIdInput = document.getElementById('eval-id');
+  if (evalIdInput) evalIdInput.value = '';
+
+  const form = document.getElementById('form-evaluacion');
+  if (form) form.reset();
+
+  const totalEl = document.getElementById('eval-total');
+  if (totalEl) totalEl.value = 0;
+
+  const submitBtn = document.getElementById('btn-submit-eval');
+  const cancelBtn = document.getElementById('btn-cancel-eval');
+  if (submitBtn) submitBtn.textContent = '💾 Guardar Evaluación';
+  if (cancelBtn) cancelBtn.style.display = 'none';
 }
 
 async function guardarEvaluacion(event) {
   event.preventDefault();
 
   const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const evalId = document.getElementById('eval-id').value;
+
   if (!proyectoId) {
     alert('Por favor seleccione un proyecto.');
     return;
   }
 
-  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
-  const esSteam = proyecto && proyecto.categoria && proyecto.categoria.toUpperCase() === 'STEAM';
+  const total = Number(document.getElementById('eval-total').value) || 0;
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
 
-  const val1 = Number(document.getElementById('eval-preg-a').value) || 0;
-  const val2 = Number(document.getElementById('eval-preg-b').value) || 0;
-  const val3 = Number(document.getElementById('eval-preg-c').value) || 0;
-  const total = val1 + val2 + val3;
-
-  const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
-  let nombreJuez = 'Juez';
-  let juezId = '';
-
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      nombreJuez = user.nombre || user.email || 'Juez';
-      juezId = user.id || user._id || '';
-    } catch (e) {
-      console.error('Error al leer datos de usuario:', e);
-    }
-  }
+  let nombreJuez = currentUser ? (currentUser.nombre || currentUser.email || 'Juez') : 'Juez';
+  let juezId = currentUser ? (currentUser.id || currentUser._id || '') : '';
 
   const payload = {
     total: total,
     nombreJuez: nombreJuez,
-    juezId: juezId
+    juezId: juezId,
+    userRole: userRole,
+    preguntasDetalle: {}
   };
 
-  if (esSteam) {
-    payload.preguntaX = val1;
-    payload.preguntaY = val2;
-    payload.preguntaZ = val3;
-  } else {
-    payload.preguntaA = val1;
-    payload.preguntaB = val2;
-    payload.preguntaC = val3;
-  }
+  const inputs = document.querySelectorAll('.eval-score-input');
+  inputs.forEach(inp => {
+    const qKey = inp.getAttribute('data-id');
+    const qText = inp.getAttribute('data-text') || qKey;
+    const scoreVal = Number(inp.value) || 0;
+
+    payload.preguntasDetalle[qKey] = {
+      texto: qText,
+      puntos: scoreVal
+    };
+  });
 
   const token = sessionStorage.getItem('token');
+  const isUpdate = Boolean(evalId);
+  const url = isUpdate 
+    ? `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}` 
+    : `${API_URL}/proyectos/${proyectoId}/evaluaciones`;
+  const method = isUpdate ? 'PUT' : 'POST';
 
   try {
-    const res = await fetch(`${API_URL}/proyectos/${proyectoId}/evaluaciones`, {
-      method: 'POST',
+    const res = await fetch(url, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -892,17 +896,16 @@ async function guardarEvaluacion(event) {
     const data = await res.json();
 
     if (res.ok) {
-      alert('✅ Evaluación agregada con éxito');
-      
-      document.getElementById('form-evaluacion').reset();
-      document.getElementById('eval-total').value = 0;
+      alert(`✅ Evaluación ${isUpdate ? 'actualizada' : 'agregada'} con éxito`);
 
       const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
       if (proyectoIdx !== -1) {
         proyectosCargados[proyectoIdx] = data.proyecto;
       }
-      
-      mostrarDetalleEvaluacion(proyectoId);
+
+      cancelarEdicionEvaluacion();
+      document.getElementById('select-eval-proyecto').value = proyectoId;
+      alSeleccionarProyecto(proyectoId);
     } else {
       alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
     }
@@ -912,41 +915,50 @@ async function guardarEvaluacion(event) {
   }
 }
 
-function mostrarDetalleEvaluacion(proyectoId) {
-  const tbody = document.getElementById('tbl-evaluaciones');
-  if (!tbody) return;
+// Deletes an evaluation from a project via DELETE /api/proyectos/:proyectoId/evaluaciones/:evalId
+async function eliminarEvaluacion(evalId) {
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  if (!proyectoId || !evalId) return;
 
-  tbody.innerHTML = '';
-
-  if (!proyectoId) {
-    tbody.innerHTML = '<tr><td colspan="5">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
+  if (!confirm('⚠️ ¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
     return;
   }
 
-  const proyecto = proyectosCargados.find(p => p._id === proyectoId);
+  const token = sessionStorage.getItem('token');
+  const url = `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}`;
 
-  if (!proyecto || !proyecto.evaluacion || proyecto.evaluacion.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
-    return;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Evaluación eliminada con éxito');
+
+      const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
+      if (proyectoIdx !== -1) {
+        if (data.proyecto) {
+          proyectosCargados[proyectoIdx] = data.proyecto;
+        } else {
+          proyectosCargados[proyectoIdx].evaluacion = proyectosCargados[proyectoIdx].evaluacion.filter(e => String(e.id) !== String(evalId));
+        }
+      }
+
+      cancelarEdicionEvaluacion();
+      document.getElementById('select-eval-proyecto').value = proyectoId;
+      alSeleccionarProyecto(proyectoId);
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo eliminar la evaluación'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error de conexión con el servidor');
   }
-
-  const esSteam = proyecto && proyecto.categoria && proyecto.categoria.toUpperCase() === 'STEAM';
-
-  proyecto.evaluacion.forEach(ev => {
-    const valA = esSteam ? (ev.preguntaX !== undefined ? ev.preguntaX : ev.preguntaA || 0) : (ev.preguntaA || 0);
-    const valB = esSteam ? (ev.preguntaY !== undefined ? ev.preguntaY : ev.preguntaB || 0) : (ev.preguntaB || 0);
-    const valC = esSteam ? (ev.preguntaZ !== undefined ? ev.preguntaZ : ev.preguntaC || 0) : (ev.preguntaC || 0);
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${ev.juez ? (ev.juez.nombre || 'Juez') : 'Juez'}</td>
-      <td>${valA} pts</td>
-      <td>${valB} pts</td>
-      <td>${valC} pts</td>
-      <td class="score-cell">${ev.Total || 0} pts</td>
-    `;
-    tbody.appendChild(tr);
-  });
 }
 
 // ==========================================
