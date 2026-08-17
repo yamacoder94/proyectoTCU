@@ -153,15 +153,24 @@
     .btn-submit { background: var(--accent); color: #000; font-weight: bold; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
     .btn-submit:hover { background: var(--accent-hover); }
 
-    /* Responsive Tables with Horizontal Scroll */
-    .table-container { 
-      background: var(--sidebar-bg); 
-      border-radius: 8px; 
-      overflow-x: auto; 
-      margin-bottom: 24px; 
-      border: 1px solid #475569; 
-      -webkit-overflow-scrolling: touch;
-    }
+/* Responsive Tables Container */
+.table-container { 
+  background: var(--sidebar-bg); 
+  border-radius: 8px; 
+  margin-bottom: 24px; 
+  border: 1px solid #475569; 
+  overflow: hidden; /* Prevents whole card scrolling and maintains rounded corners */
+}
+
+/* Inner scroll container for table content only */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+
+
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
     th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #475569; font-size: 0.9rem; }
     th { background: #0f172a; color: var(--text-muted); }
@@ -296,6 +305,7 @@
       <!-- Leaderboard: Modelo de Negocio -->
       <h2 class="category-title">💼 Categoría: Modelo de Negocio</h2>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -311,6 +321,7 @@
             <tr><td colspan="6">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
+        </div>
         <!-- Pagination Controls Modelo -->
         <div class="pagination-bar">
           <div>
@@ -327,11 +338,13 @@
             <button id="btn-next-modelo" onclick="changePage('modelo', 1)">Siguiente ▶</button>
           </div>
         </div>
+      
       </div>
 
       <!-- Leaderboard: STEAM -->
       <h2 class="category-title">🔬 Categoría: STEAM</h2>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -347,6 +360,7 @@
             <tr><td colspan="6">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
+      </div>
         <!-- Pagination Controls STEAM -->
         <div class="pagination-bar">
           <div>
@@ -387,6 +401,7 @@
         </form>
       </div>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -399,6 +414,7 @@
           </thead>
           <tbody id="tbl-estudiantes"></tbody>
         </table>
+        </div>
 
         <!-- Pagination Controls Estudiantes -->
         <div class="pagination-bar">
@@ -451,6 +467,7 @@
       </div>
 
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -463,6 +480,7 @@
           </thead>
           <tbody id="tbl-jueces"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -499,6 +517,7 @@
         </form>
       </div>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -512,6 +531,7 @@
           </thead>
           <tbody id="tbl-proyectos"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -552,6 +572,7 @@
       </div>
 
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr id="tbl-evaluaciones-header">
@@ -564,6 +585,7 @@
             <tr><td colspan="3">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
