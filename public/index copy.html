@@ -20,71 +20,16 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    
-    body { 
-      background-color: var(--bg-dark); 
-      color: var(--text); 
-      display: flex; 
-      height: 100vh; 
-      overflow: hidden; 
-    }
-
-    /* Top Bar Mobile Toggle */
-    .mobile-header {
-      display: none;
-      background-color: var(--sidebar-bg);
-      padding: 12px 16px;
-      border-bottom: 1px solid #475569;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-    .mobile-header h2 { font-size: 1.1rem; color: var(--accent); }
-    .menu-toggle-btn {
-      background: var(--card-bg);
-      border: 1px solid #475569;
-      color: var(--text);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 1.1rem;
-      cursor: pointer;
-    }
+    body { background-color: var(--bg-dark); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
     /* Sidebar Navigation */
-    aside { 
-      width: 250px; 
-      min-width: 250px;
-      background-color: var(--sidebar-bg); 
-      padding: 20px; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 12px; 
-      border-right: 1px solid #475569; 
-      transition: all 0.3s ease;
-      z-index: 100;
-    }
+    aside { width: 250px; background-color: var(--sidebar-bg); padding: 20px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid #475569; }
     aside h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 12px; }
-    
-    .nav-btn { 
-      background: none; 
-      border: none; 
-      color: var(--text-muted); 
-      padding: 12px; 
-      text-align: left; 
-      font-size: 0.95rem; 
-      cursor: pointer; 
-      border-radius: 6px; 
-      font-weight: 600; 
-      transition: 0.2s; 
-      display: flex; 
-      align-items: center; 
-      gap: 10px; 
-      width: 100%;
-    }
+    .nav-btn { background: none; border: none; color: var(--text-muted); padding: 12px; text-align: left; font-size: 0.95rem; cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
     .nav-btn:hover, .nav-btn.active { background-color: var(--card-bg); color: var(--text); }
     .nav-btn.active { border-left: 4px solid var(--accent); }
 
-    /* Push Logout button to bottom */
+    /* Push Logout button to the bottom */
     .logout-btn {
       margin-top: auto;
       color: var(--danger);
@@ -95,17 +40,9 @@
     }
 
     /* Main Content */
-    main { flex: 1; padding: 30px; overflow-y: auto; width: 100%; }
-    .header-bar { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      gap: 12px;
-      flex-wrap: wrap; 
-      margin-bottom: 24px; 
-    }
-    .header-bar h1 { font-size: 1.5rem; word-break: break-word; }
-
+    main { flex: 1; padding: 30px; overflow-y: auto; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    
     .view-section { display: none; }
     .view-section.active { display: block; }
 
@@ -125,7 +62,7 @@
     .btn-cancel:hover { background-color: #475569; }
 
     /* KPIs Grid */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .kpi-card { background: var(--sidebar-bg); border-radius: 8px; padding: 16px; border: 1px solid #475569; }
     .kpi-title { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
     .kpi-value { font-size: 1.2rem; font-weight: bold; color: var(--accent); word-break: break-word; }
@@ -142,25 +79,18 @@
 
     /* Forms */
     .form-container { background: var(--sidebar-bg); padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #475569; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
     .input-group { display: flex; flex-direction: column; gap: 6px; }
     label { font-size: 0.85rem; color: var(--text-muted); }
-    input, select { padding: 10px; background: var(--bg-dark); border: 1px solid #475569; color: var(--text); border-radius: 4px; font-size: 0.9rem; width: 100%; }
+    input, select { padding: 10px; background: var(--bg-dark); border: 1px solid #475569; color: var(--text); border-radius: 4px; font-size: 0.9rem; }
     input:focus, select:focus { outline: 1px solid var(--accent); }
 
-    .btn-submit { background: var(--accent); color: #000; font-weight: bold; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    .btn-submit { background: var(--accent); color: #000; font-weight: bold; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
     .btn-submit:hover { background: var(--accent-hover); }
 
-    /* Responsive Tables with Horizontal Scroll */
-    .table-container { 
-      background: var(--sidebar-bg); 
-      border-radius: 8px; 
-      overflow-x: auto; 
-      margin-bottom: 24px; 
-      border: 1px solid #475569; 
-      -webkit-overflow-scrolling: touch;
-    }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    /* Tables */
+    .table-container { background: var(--sidebar-bg); border-radius: 8px; overflow: hidden; margin-bottom: 24px; border: 1px solid #475569; }
+    table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #475569; font-size: 0.9rem; }
     th { background: #0f172a; color: var(--text-muted); }
 
@@ -182,8 +112,6 @@
       border-top: 1px solid #475569;
       font-size: 0.85rem;
       color: var(--text-muted);
-      flex-wrap: wrap;
-      gap: 12px;
     }
     .pagination-bar select, .pagination-bar button {
       background: var(--bg-dark);
@@ -194,73 +122,31 @@
       cursor: pointer;
       font-size: 0.85rem;
     }
-    .pagination-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .pagination-bar button:hover:not(:disabled) { background: var(--card-bg); color: var(--accent); }
-    .pagination-controls { display: flex; align-items: center; gap: 12px; }
-
-    /* Responsive Breakpoints (Tablets & Mobile) */
-    @media (max-width: 1024px) {
-      aside { width: 210px; min-width: 210px; padding: 16px; }
-      main { padding: 20px; }
+    .pagination-bar button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
-
-    @media (max-width: 768px) {
-      body { flex-direction: column; overflow: auto; }
-      
-      .mobile-header { display: flex; }
-
-      aside {
-        width: 100%;
-        min-width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #475569;
-        display: none;
-        padding: 16px;
-      }
-      aside.open { display: flex; }
-      aside h2 { display: none; }
-
-      main { padding: 16px; height: auto; overflow: visible; }
-      
-      .header-bar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      
-      .header-bar button {
-        width: 100%;
-      }
-
-      .form-grid { grid-template-columns: 1fr; }
-      
-      .pagination-bar {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: center;
-      }
-      
-      .pagination-controls {
-        justify-content: space-between;
-      }
+    .pagination-bar button:hover:not(:disabled) {
+      background: var(--card-bg);
+      color: var(--accent);
+    }
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header (Mobile / Tablet Portrait) -->
-  <div class="mobile-header">
-    <h2 id="mobile-panel-title">⚙️ Admin Panel</h2>
-    <button class="menu-toggle-btn" onclick="toggleMobileMenu()">☰ Menú</button>
-  </div>
-
   <!-- Sidebar Lateral -->
-  <aside id="sidebar-aside">
+  <aside>
     <h2 id="panel-title">⚙️ Admin Panel</h2>
-    <button id="nav-leaderboard" class="nav-btn active" onclick="handleNavClick('leaderboard')">🏆 Leaderboard</button>
-    <button id="nav-estudiantes" class="nav-btn" onclick="handleNavClick('estudiantes')">🎓 Estudiantes</button>
-    <button id="nav-jueces" class="nav-btn" onclick="handleNavClick('jueces')">⚖️ Jueces</button>
-    <button id="nav-proyectos" class="nav-btn" onclick="handleNavClick('proyectos')">🚀 Proyectos</button>
-    <button id="nav-evaluaciones" class="nav-btn" onclick="handleNavClick('evaluaciones')">📝 Evaluaciones</button>
+    <button id="nav-leaderboard" class="nav-btn active" onclick="switchTab('leaderboard')">🏆 Leaderboard</button>
+    <button id="nav-estudiantes" class="nav-btn" onclick="switchTab('estudiantes')">🎓 Estudiantes</button>
+    <button id="nav-jueces" class="nav-btn" onclick="switchTab('jueces')">⚖️ Jueces</button>
+    <button id="nav-proyectos" class="nav-btn" onclick="switchTab('proyectos')">🚀 Proyectos</button>
+    <button id="nav-evaluaciones" class="nav-btn" onclick="switchTab('evaluaciones')">📝 Evaluaciones</button>
 
     <button class="nav-btn logout-btn" onclick="logout()">🚪 Cerrar Sesión</button>
   </aside>
@@ -399,28 +285,34 @@
         </table>
 
         <!-- Pagination Controls Estudiantes -->
-        <div class="pagination-bar">
-          <div>
-            <label for="select-size-estudiantes">Mostrar: </label>
-            <select id="select-size-estudiantes" onchange="changePageSize('estudiantes', this.value)">
-              <option value="10" selected>10 registros</option>
-              <option value="15">15 registros</option>
-              <option value="20">20 registros</option>
-            </select>
-          </div>
-          <div class="pagination-controls">
-            <button id="btn-prev-estudiantes" onclick="changePage('estudiantes', -1)">◀ Anterior</button>
-            <span id="page-info-estudiantes">Página 1 de 1</span>
-            <button id="btn-next-estudiantes" onclick="changePage('estudiantes', 1)">Siguiente ▶</button>
-          </div>
-        </div>
+    <div class="pagination-bar">
+      <div>
+        <label for="select-size-estudiantes">Mostrar: </label>
+        <select id="select-size-estudiantes" onchange="changePageSize('estudiantes', this.value)">
+          <option value="10" selected>10 registros</option>
+          <option value="15">15 registros</option>
+          <option value="20">20 registros</option>
+        </select>
+      </div>
+      <div class="pagination-controls">
+        <button id="btn-prev-estudiantes" onclick="changePage('estudiantes', -1)">◀ Anterior</button>
+        <span id="page-info-estudiantes">Página 1 de 1</span>
+        <button id="btn-next-estudiantes" onclick="changePage('estudiantes', 1)">Siguiente ▶</button>
       </div>
     </div>
 
-    <!-- SECCIÓN JUECES -->
+
+      </div>
+    </div>
+
+
+    
+
+<!-- SECCIÓN JUECES -->
     <div id="sec-jueces" class="view-section">
       <div class="header-bar"><h1>Gestión de Jueces</h1></div>
       <div class="form-container">
+        <!-- FORMULARIO DE JUECES -->
         <form id="form-juez" onsubmit="guardarJuez(event)" autocomplete="off">
           <input type="hidden" id="juez-id">
           <div class="form-grid">
@@ -464,54 +356,54 @@
       </div>
     </div>
 
-    <!-- SECCIÓN PROYECTOS -->
-    <div id="sec-proyectos" class="view-section">
-      <div class="header-bar"><h1>Gestión de Proyectos</h1></div>
-      <div class="form-container">
-        <form id="form-proyecto" onsubmit="guardarProyecto(event)">
-          <input type="hidden" id="proy-id">
-          <div class="form-grid">
-            <div class="input-group">
-              <label for="proy-nombre">Título del Proyecto</label>
-              <input type="text" id="proy-nombre" required>
-            </div>
-            <div class="input-group">
-              <label for="proy-centro">Centro Educativo</label>
-              <input type="text" id="proy-centro" required>
-            </div>
-            <div class="input-group">
-              <label for="proy-cat">Categoría</label>
-              <select id="proy-cat" required>
-                <option value="">-- Seleccionar Categoría --</option>
-                <option value="Modelo de Negocio">Modelo de Negocio</option>
-                <option value="STEAM">STEAM</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label for="proy-eje">Eje Temático</label>
-              <input type="text" id="proy-eje">
-            </div>
-          </div>
-          <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
-          <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>
-        </form>
+<!-- SECCIÓN PROYECTOS -->
+<div id="sec-proyectos" class="view-section">
+  <div class="header-bar"><h1>Gestión de Proyectos</h1></div>
+  <div class="form-container">
+    <form id="form-proyecto" onsubmit="guardarProyecto(event)">
+      <input type="hidden" id="proy-id">
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="proy-nombre">Título del Proyecto</label>
+          <input type="text" id="proy-nombre" required>
+        </div>
+        <div class="input-group">
+          <label for="proy-centro">Centro Educativo</label>
+          <input type="text" id="proy-centro" required>
+        </div>
+        <div class="input-group">
+          <label for="proy-cat">Categoría</label>
+          <select id="proy-cat" required>
+            <option value="">-- Seleccionar Categoría --</option>
+            <option value="Modelo de Negocio">Modelo de Negocio</option>
+            <option value="STEAM">STEAM</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="proy-eje">Eje Temático</label>
+          <input type="text" id="proy-eje">
+        </div>
       </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Proyecto</th>
-              <th>Centro Educativo</th>
-              <th>Categoría</th>
-              <th>Eje Temático</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-proyectos"></tbody>
-        </table>
-      </div>
-    </div>
+      <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
+      <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>
+    </form>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Proyecto</th>
+          <th>Centro Educativo</th>
+          <th>Categoría</th>
+          <th>Eje Temático</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-proyectos"></tbody>
+    </table>
+  </div>
+</div>
 
     <!-- SECCIÓN EVALUACIONES -->
     <div id="sec-evaluaciones" class="view-section">
@@ -532,29 +424,41 @@
       <div id="container-form-evaluacion" class="form-container" style="display: none;">
         <h3 style="margin-bottom: 16px; color: var(--accent);">➕ Agregar Nueva Evaluación</h3>
         <form id="form-evaluacion" onsubmit="guardarEvaluacion(event)">
-          <!-- Dynamic Rubric Questions Container -->
-          <div id="eval-questions-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
-
-          <!-- Total Calculation Row -->
-          <div class="input-group" style="background: var(--card-bg); padding: 14px; border-radius: 6px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <label for="eval-total" style="font-size: 1.1rem; font-weight: bold; color: var(--text);">Puntaje Total (Calculado):</label>
-            <input type="number" id="eval-total" value="0" readonly style="background-color: var(--bg-dark); font-weight: bold; color: var(--accent); font-size: 1.2rem; width: 120px; text-align: center;">
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="eval-preg-a" id="lbl-eval-preg-a">Pregunta A (Puntos)</label>
+              <input type="number" id="eval-preg-a" min="0" value="0" oninput="calcularPuntajeTotalEval()" required>
+            </div>
+            <div class="input-group">
+              <label for="eval-preg-b" id="lbl-eval-preg-b">Pregunta B (Puntos)</label>
+              <input type="number" id="eval-preg-b" min="0" value="0" oninput="calcularPuntajeTotalEval()" required>
+            </div>
+            <div class="input-group">
+              <label for="eval-preg-c" id="lbl-eval-preg-c">Pregunta C (Puntos)</label>
+              <input type="number" id="eval-preg-c" min="0" value="0" oninput="calcularPuntajeTotalEval()" required>
+            </div>
+            <div class="input-group">
+              <label for="eval-total"><strong>Puntaje Total (Calculado)</strong></label>
+              <input type="number" id="eval-total" value="0" readonly style="background-color: var(--card-bg); font-weight: bold; color: var(--accent);">
+            </div>
           </div>
-
-          <button type="submit" class="btn-submit" style="margin-top: 16px; width: 100%;">💾 Guardar Evaluación</button>
+          <button type="submit" class="btn-submit">💾 Guardar Evaluación</button>
         </form>
       </div>
 
       <div class="table-container">
         <table>
           <thead>
-            <tr id="tbl-evaluaciones-header">
+            <tr>
               <th>Juez</th>
+              <th id="th-eval-preg-a">Pregunta A</th>
+              <th id="th-eval-preg-b">Pregunta B</th>
+              <th id="th-eval-preg-c">Pregunta C</th>
               <th>Puntaje Total</th>
             </tr>
           </thead>
           <tbody id="tbl-evaluaciones">
-            <tr><td colspan="2">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>
+            <tr><td colspan="5">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>
           </tbody>
         </table>
       </div>
@@ -562,21 +466,6 @@
 
   </main>
 
-  <script>
-    // Responsive helper functions for mobile navigation
-    function toggleMobileMenu() {
-      const aside = document.getElementById('sidebar-aside');
-      aside.classList.toggle('open');
-    }
-
-    function handleNavClick(tabName) {
-      const aside = document.getElementById('sidebar-aside');
-      if (window.innerWidth <= 768) {
-        aside.classList.remove('open');
-      }
-      switchTab(tabName);
-    }
-  </script>
   <script src="app03.js"></script>
 </body>
 </html>

@@ -179,6 +179,151 @@ router.post('/evaluacion-sheet', async (req, res) => {
   }
 });
 */
+
+// ==========================================
+// 6. POST /api/proyectos/:id/evaluaciones
+// ==========================================
+
+// POST /api/proyectos/:id/evaluaciones *Working version prior to latest changes about categoria of proyectos
+
+/*
+router.post('/:id/evaluaciones', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { preguntaA, preguntaB, preguntaC, total, nombreJuez, juezId } = req.body;
+
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: juezId || "",
+        nombre: nombreJuez || "Juez"
+      },
+      preguntaA: Number(preguntaA) || 0,
+      preguntaB: Number(preguntaB) || 0,
+      preguntaC: Number(preguntaC) || 0,
+      Total: Number(total) || 0
+    };
+
+    const proyectoActualizado = await Proyecto.findOneAndUpdate(
+      { _id: id },
+      { $push: { evaluacion: nuevaEvaluacion } },
+      { new: true, runValidators: false }
+    );
+
+    if (!proyectoActualizado) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    res.json({
+      message: 'Evaluación agregada con éxito',
+      proyecto: proyectoActualizado
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+*/
+
+// POST /api/proyectos/:id/evaluaciones <========================================================
+/*
+router.post('/:id/evaluaciones', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { preguntaA, preguntaB, preguntaC, preguntaX, preguntaY, preguntaZ, total, nombreJuez, juezId } = req.body;
+
+    // 1. Fetch project to check category
+    const proyecto = await Proyecto.findById(id);
+    if (!proyecto) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    const esSteam = proyecto.categoria && proyecto.categoria.toUpperCase() === 'STEAM';
+
+    // 2. Build base evaluation object
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: juezId || "",
+        nombre: nombreJuez || "Juez"
+      },
+      Total: Number(total) || 0
+    };
+
+    // 3. Assign key names according to category
+    if (esSteam) {
+      nuevaEvaluacion.preguntaX = Number(preguntaX !== undefined ? preguntaX : preguntaA) || 0;
+      nuevaEvaluacion.preguntaY = Number(preguntaY !== undefined ? preguntaY : preguntaB) || 0;
+      nuevaEvaluacion.preguntaZ = Number(preguntaZ !== undefined ? preguntaZ : preguntaC) || 0;
+    } else {
+      nuevaEvaluacion.preguntaA = Number(preguntaA) || 0;
+      nuevaEvaluacion.preguntaB = Number(preguntaB) || 0;
+      nuevaEvaluacion.preguntaC = Number(preguntaC) || 0;
+    }
+
+    // 4. Atomic update in MongoDB
+    const proyectoActualizado = await Proyecto.findOneAndUpdate(
+      { _id: id },
+      { $push: { evaluacion: nuevaEvaluacion } },
+      { new: true, runValidators: false }
+    );
+
+    res.json({
+      message: 'Evaluación agregada con éxito',
+      proyecto: proyectoActualizado
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+*/
+
+// POST /api/proyectos/:id/evaluaciones
+router.post('/:id/evaluaciones', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { total, nombreJuez, juezId, preguntasDetalle } = req.body;
+
+    // 1. Fetch project to ensure it exists
+    const proyecto = await Proyecto.findById(id);
+    if (!proyecto) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    // 2. Build new evaluation document structure with full question details
+    const nuevaEvaluacion = {
+      id: new Date().getTime().toString(),
+      juez: {
+        id: juezId || "",
+        nombre: nombreJuez || "Juez"
+      },
+      Total: Number(total) || 0,
+      preguntas: preguntasDetalle || {}
+    };
+
+    // 3. Atomic push into MongoDB document array
+    const proyectoActualizado = await Proyecto.findOneAndUpdate(
+      { _id: id },
+      { $push: { evaluacion: nuevaEvaluacion } },
+      { new: true, runValidators: false }
+    );
+
+    res.json({
+      message: 'Evaluación agregada con éxito',
+      proyecto: proyectoActualizado
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno: ' + err.message });
+  }
+});
+
+
+
+// ==========================================
 router.post('/evaluacion-sheet', async (req, res) => {
   try {
     const { tituloProyecto, total, nombreJuez } = req.body;

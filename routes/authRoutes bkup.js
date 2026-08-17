@@ -67,47 +67,40 @@ router.post('/login', async (req, res) => {
 */
 
 // LOGIN ROUTE
-// LOGIN ROUTE
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Use .lean() to prevent Mongoose from stripping unmapped schema fields
     const usuario = await Usuario.findOne({ email }).lean();
     if (!usuario) {
       return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
+    // Compare passwords
     const isMatch = await bcrypt.compare(password, usuario.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
+    // Determine userRole safely
     const userRole = usuario.userRole || usuario.rol || usuario.role || 'admin';
 
-    // Clean assignedProjects array before returning user object
-    const rawProjects = usuario.assignedProjects || [];
-    const cleanedProjects = rawProjects
-      .map(p => {
-        if (!p) return null;
-        if (typeof p === 'string') return p.trim();
-        if (typeof p === 'object') return p.id || p._id || p.toString();
-        return null;
-      })
-      .filter(id => id && typeof id === 'string' && id !== '[object Object]');
-
+    // Create JWT token including userRole
     const token = jwt.sign(
       { id: usuario._id, email: usuario.email, userRole: userRole },
       process.env.JWT_SECRET || 'fallback_secret_key',
       { expiresIn: '2h' }
     );
 
+    // Send user object back to frontend
     res.json({
       token,
       user: {
         id: usuario._id,
         email: usuario.email,
         userRole: userRole,
-        assignedProjects: cleanedProjects
+        assignedProjects: usuario.assignedProjects || [] // Includes assigned project IDs
       }
     });
 
