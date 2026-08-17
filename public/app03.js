@@ -8,7 +8,9 @@ const API_URL = "/api";
 const paginationState = {
   modelo: { currentPage: 1, pageSize: 10, data: [] },
   steam: { currentPage: 1, pageSize: 10, data: [] },
-  estudiantes: { currentPage: 1, pageSize: 10, data: [] }
+  estudiantes: { currentPage: 1, pageSize: 10, data: [] },
+  proyectos: { currentPage: 1, pageSize: 10, data: [] },
+  jueces: { currentPage: 1, pageSize: 10, data: [] }
 };
 
 // ==========================================
@@ -374,6 +376,7 @@ function renderEstudiantesPage() {
   });
 }
 
+/*
 async function cargarJueces() {
   const tbody = document.getElementById('tbl-jueces');
   tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
@@ -411,6 +414,81 @@ async function cargarJueces() {
     document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
   });
 }
+*/
+
+async function cargarJueces() {
+  const tbody = document.getElementById('tbl-jueces');
+  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('jueces');
+  
+  if (!data || data.length === 0) {
+    paginationState.jueces.data = [];
+    renderJuecesPage();
+    return;
+  }
+
+  paginationState.jueces.data = data;
+  renderJuecesPage();
+}
+
+function renderJuecesPage() {
+  const state = paginationState.jueces;
+  const tbody = document.getElementById('tbl-jueces');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-jueces');
+  const btnPrev = document.getElementById('btn-prev-jueces');
+  const btnNext = document.getElementById('btn-next-jueces');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">No hay jueces registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const nombre = item.name || item.nombre || item.email || 'Sin nombre';
+
+    let proyectosTexto = 'Ninguno';
+    if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
+      proyectosTexto = item.assignedProjects
+        .map(p => (typeof p === 'object' && p !== null) ? (p.tituloProyecto || p.title || 'Sin título') : p)
+        .join(', ');
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${nombre}</td>
+      <td>${item.email}</td>
+      <td>${proyectosTexto}</td>
+      <td>
+        <button class="btn-action btn-edit" id="btn-edit-juez-${item._id}">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
+  });
+}
+
+
 
 async function cargarOpcionesProyectosJuez() {
   const select = document.getElementById('juez-proyectos');
@@ -431,7 +509,7 @@ async function cargarOpcionesProyectosJuez() {
     select.innerHTML = '<option value="">No hay proyectos disponibles</option>';
   }
 }
-
+/*
 async function cargarProyectos() {
   const tbody = document.getElementById('tbl-proyectos');
   tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
@@ -461,6 +539,123 @@ async function cargarProyectos() {
     document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
   });
 }
+*/
+async function cargarProyectos() {
+  const tbody = document.getElementById('tbl-proyectos');
+  tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('proyectos');
+  
+  if (!data || data.length === 0) {
+    paginationState.proyectos.data = [];
+    renderProyectosPage();
+    return;
+  }
+
+  paginationState.proyectos.data = data;
+  renderProyectosPage();
+}
+
+function renderProyectosPage() {
+  const state = paginationState.proyectos;
+  const tbody = document.getElementById('tbl-proyectos');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-proyectos');
+  const btnPrev = document.getElementById('btn-prev-proyectos');
+  const btnNext = document.getElementById('btn-next-proyectos');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6">No hay proyectos registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${item.tituloProyecto || item.title || '-'}</td>
+      <td>${item.centroEducativo || '-'}</td>
+      <td>${item.categoria || '-'}</td>
+      <td>${item.ejeTematico || '-'}</td>
+      <td>
+        <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
+  });
+}
+
+/*
+function changePageSize(category, newSize) {
+  paginationState[category].pageSize = parseInt(newSize, 10);
+  paginationState[category].currentPage = 1;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+*/
+function changePageSize(category, newSize) {
+  paginationState[category].pageSize = parseInt(newSize, 10);
+  paginationState[category].currentPage = 1;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+
+/*
+function changePage(category, delta) {
+  paginationState[category].currentPage += delta;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+*/
+function changePage(category, delta) {
+  paginationState[category].currentPage += delta;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+
 
 // ==========================================
 // LEADERBOARD POR CATEGORÍAS Y PAGINACIÓN

@@ -435,7 +435,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN JUECES -->
+ <!-- SECCIÓN JUECES -->
     <div id="sec-jueces" class="view-section">
       <div class="header-bar"><h1>Gestión de Jueces</h1></div>
       <div class="form-container">
@@ -481,10 +481,27 @@
           <tbody id="tbl-jueces"></tbody>
         </table>
         </div>
+
+        <!-- Pagination Controls Jueces -->
+        <div class="pagination-bar">
+          <div>
+            <label for="select-size-jueces">Mostrar: </label>
+            <select id="select-size-jueces" onchange="changePageSize('jueces', this.value)">
+              <option value="10" selected>10 registros</option>
+              <option value="15">15 registros</option>
+              <option value="20">20 registros</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button id="btn-prev-jueces" onclick="changePage('jueces', -1)">◀ Anterior</button>
+            <span id="page-info-jueces">Página 1 de 1</span>
+            <button id="btn-next-jueces" onclick="changePage('jueces', 1)">Siguiente ▶</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- SECCIÓN PROYECTOS -->
+<!-- SECCIÓN PROYECTOS -->
     <div id="sec-proyectos" class="view-section">
       <div class="header-bar"><h1>Gestión de Proyectos</h1></div>
       <div class="form-container">
@@ -531,6 +548,23 @@
           </thead>
           <tbody id="tbl-proyectos"></tbody>
         </table>
+        </div>
+
+        <!-- Pagination Controls Proyectos -->
+        <div class="pagination-bar">
+          <div>
+            <label for="select-size-proyectos">Mostrar: </label>
+            <select id="select-size-proyectos" onchange="changePageSize('proyectos', this.value)">
+              <option value="10" selected>10 registros</option>
+              <option value="15">15 registros</option>
+              <option value="20">20 registros</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button id="btn-prev-proyectos" onclick="changePage('proyectos', -1)">◀ Anterior</button>
+            <span id="page-info-proyectos">Página 1 de 1</span>
+            <button id="btn-next-proyectos" onclick="changePage('proyectos', 1)">Siguiente ▶</button>
+          </div>
         </div>
       </div>
     </div>
