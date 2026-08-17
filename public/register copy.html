@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro - Admin Panel</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,11 +10,11 @@
     <h2>📝 Crear Cuenta Admin</h2>
     <form id="register-form">
       <div class="form-group">
-        <label for="email">Correo Electrónico</label>
+        <label>Correo Electrónico</label>
         <input type="email" id="email" required placeholder="correo@ejemplo.com">
       </div>
       <div class="form-group">
-        <label for="password">Contraseña</label>
+        <label>Contraseña</label>
         <input type="password" id="password" required placeholder="••••••••">
       </div>
       <button type="submit" class="auth-btn">Registrar</button>
@@ -45,11 +44,11 @@
 
         const msgElement = document.getElementById('msg');
         if (res.ok) {
-          msgElement.style.color = 'var(--success)';
+          msgElement.style.color = '#38ef7d';
           msgElement.textContent = '✅ Usuario creado correctamente. Redirigiendo...';
           setTimeout(() => window.location.href = 'login.html', 2000);
         } else {
-          msgElement.style.color = 'var(--danger)';
+          msgElement.style.color = '#ff6b6b';
           msgElement.textContent = data.message;
         }
       } catch (err) {
