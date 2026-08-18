@@ -877,7 +877,7 @@ function calcularPuntajeTotal(item, categoryHint = '') {
   const cat = (item.categoria || categoryHint || '').toUpperCase();
   const esStem = cat.includes('STEM') || cat.includes('STEAM');
 
-  const M1 = esStem ? 105 : 74;
+  const M1 = esStem ? 105 : 72;
   const M2 = esStem ? 111 : 54;
 
   return Number((50 * ((N1 / M1) + (N2 / M2))).toFixed(1));
