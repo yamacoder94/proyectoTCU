@@ -8,7 +8,9 @@ const API_URL = "/api";
 const paginationState = {
   modelo: { currentPage: 1, pageSize: 10, data: [] },
   steam: { currentPage: 1, pageSize: 10, data: [] },
-  estudiantes: { currentPage: 1, pageSize: 10, data: [] }
+  estudiantes: { currentPage: 1, pageSize: 10, data: [] },
+  proyectos: { currentPage: 1, pageSize: 10, data: [] },
+  jueces: { currentPage: 1, pageSize: 10, data: [] }
 };
 
 // ==========================================
@@ -222,7 +224,9 @@ async function guardarProyecto(event) {
     tituloProyecto: document.getElementById('proy-nombre').value,
     centroEducativo: document.getElementById('proy-centro').value,
     categoria: document.getElementById('proy-cat').value,
-    ejeTematico: document.getElementById('proy-eje').value
+    ejeTematico: document.getElementById('proy-eje').value,
+    // Added: Puntaje Escrito
+    puntajeEscrito: Number(document.getElementById('proy-puntaje-escrito').value) || 0
   };
 
   if (!id) {
@@ -270,6 +274,8 @@ function prepararEdicionProyecto(proy) {
   document.getElementById('proy-centro').value = proy.centroEducativo || '';
   document.getElementById('proy-cat').value = proy.categoria || '';
   document.getElementById('proy-eje').value = proy.ejeTematico || '';
+  // Added: Puntaje Escrito
+  document.getElementById('proy-puntaje-escrito').value = proy.puntajeEscrito ?? 0;
 
   document.getElementById('btn-submit-proy').textContent = '✏️ Actualizar Proyecto';
   document.getElementById('btn-cancel-proy').style.display = 'inline-block';
@@ -374,6 +380,7 @@ function renderEstudiantesPage() {
   });
 }
 
+/*
 async function cargarJueces() {
   const tbody = document.getElementById('tbl-jueces');
   tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
@@ -411,6 +418,81 @@ async function cargarJueces() {
     document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
   });
 }
+*/
+
+async function cargarJueces() {
+  const tbody = document.getElementById('tbl-jueces');
+  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('jueces');
+  
+  if (!data || data.length === 0) {
+    paginationState.jueces.data = [];
+    renderJuecesPage();
+    return;
+  }
+
+  paginationState.jueces.data = data;
+  renderJuecesPage();
+}
+
+function renderJuecesPage() {
+  const state = paginationState.jueces;
+  const tbody = document.getElementById('tbl-jueces');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-jueces');
+  const btnPrev = document.getElementById('btn-prev-jueces');
+  const btnNext = document.getElementById('btn-next-jueces');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">No hay jueces registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const nombre = item.name || item.nombre || item.email || 'Sin nombre';
+
+    let proyectosTexto = 'Ninguno';
+    if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
+      proyectosTexto = item.assignedProjects
+        .map(p => (typeof p === 'object' && p !== null) ? (p.tituloProyecto || p.title || 'Sin título') : p)
+        .join(', ');
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${nombre}</td>
+      <td>${item.email}</td>
+      <td>${proyectosTexto}</td>
+      <td>
+        <button class="btn-action btn-edit" id="btn-edit-juez-${item._id}">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
+  });
+}
+
+
 
 async function cargarOpcionesProyectosJuez() {
   const select = document.getElementById('juez-proyectos');
@@ -431,7 +513,7 @@ async function cargarOpcionesProyectosJuez() {
     select.innerHTML = '<option value="">No hay proyectos disponibles</option>';
   }
 }
-
+/*
 async function cargarProyectos() {
   const tbody = document.getElementById('tbl-proyectos');
   tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
@@ -461,6 +543,218 @@ async function cargarProyectos() {
     document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
   });
 }
+*/
+async function cargarProyectos() {
+  const tbody = document.getElementById('tbl-proyectos');
+  tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('proyectos');
+  
+  if (!data || data.length === 0) {
+    paginationState.proyectos.data = [];
+    renderProyectosPage();
+    return;
+  }
+
+  paginationState.proyectos.data = data;
+  renderProyectosPage();
+}
+
+/*
+function renderProyectosPage() {
+  const state = paginationState.proyectos;
+  const tbody = document.getElementById('tbl-proyectos');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-proyectos');
+  const btnPrev = document.getElementById('btn-prev-proyectos');
+  const btnNext = document.getElementById('btn-next-proyectos');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6">No hay proyectos registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${item.tituloProyecto || item.title || '-'}</td>
+      <td>${item.centroEducativo || '-'}</td>
+      <td>${item.categoria || '-'}</td>
+      <td>${item.ejeTematico || '-'}</td>
+      <td>
+        <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
+  });
+}
+*/
+function renderProyectosPage() {
+  const state = paginationState.proyectos;
+  const tbody = document.getElementById('tbl-proyectos');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-proyectos');
+  const btnPrev = document.getElementById('btn-prev-proyectos');
+  const btnNext = document.getElementById('btn-next-proyectos');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7">No hay proyectos registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${item.tituloProyecto || item.title || '-'}</td>
+      <td>${item.centroEducativo || '-'}</td>
+      <td>${item.categoria || '-'}</td>
+      <td>${item.ejeTematico || '-'}</td>
+      <td>${item.puntajeEscrito ?? 0} pts</td>
+      <td>
+        <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
+  });
+}
+
+
+
+/*
+function changePageSize(category, newSize) {
+  paginationState[category].pageSize = parseInt(newSize, 10);
+  paginationState[category].currentPage = 1;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+*/
+/*
+function changePageSize(category, newSize) {
+  paginationState[category].pageSize = parseInt(newSize, 10);
+  paginationState[category].currentPage = 1;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+*/
+/*
+function changePage(category, delta) {
+  paginationState[category].currentPage += delta;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+*/
+/*
+function changePage(category, delta) {
+  paginationState[category].currentPage += delta;
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    renderLeaderboardPage(category);
+  }
+}
+  */
+
+//===================================================   
+// Pagination functions for all categories
+//===================================================
+function changePageSize(category, newSize) {
+  const state = paginationState[category];
+  if (!state) return;
+
+  state.pageSize = parseInt(newSize, 10);
+  state.currentPage = 1;
+
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    // Handles 'modelo', 'steam', or any other evaluation category
+    renderLeaderboardPage(category);
+  }
+}
+
+function changePage(category, delta) {
+  const state = paginationState[category];
+  if (!state) return;
+
+  state.currentPage += delta;
+
+  if (category === 'estudiantes') {
+    renderEstudiantesPage();
+  } else if (category === 'proyectos') {
+    renderProyectosPage();
+  } else if (category === 'jueces') {
+    renderJuecesPage();
+  } else {
+    // Handles 'modelo', 'steam', or any other evaluation category
+    renderLeaderboardPage(category);
+  }
+}
+
 
 // ==========================================
 // LEADERBOARD POR CATEGORÍAS Y PAGINACIÓN
@@ -515,6 +809,7 @@ async function loadLeaderboardData() {
   renderLeaderboardPage('steam');
 }
 
+/*
 function renderLeaderboardPage(category) {
   const state = paginationState[category];
   const tbody = document.getElementById(`tbl-leaderboard-${category}`);
@@ -541,7 +836,7 @@ function renderLeaderboardPage(category) {
   tbody.innerHTML = '';
 
   if (!pageData || pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6">No hay proyectos registrados en esta categoría.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7">No hay proyectos registrados en esta categoría.</td></tr>';
     return;
   }
 
@@ -563,13 +858,157 @@ function renderLeaderboardPage(category) {
       <td><strong>${item.title || item.tituloProyecto}</strong></td>
       <td>${item.centroEducativo || 'N/A'}</td>
       <td>${votesCount} Juez(ces)</td>
+      <td>${item.puntajeEscrito ?? 0} pts</td>
       <td>${avgScore} pts prom.</td>
+      
       <td class="score-cell">${item.latestScore || item.puntajeTotal || 0} pts</td>
     `;
     tbody.appendChild(tr);
   });
 }
+  */
 
+/*
+function renderLeaderboardPage(category) {
+  const state = paginationState[category];
+  const tbody = document.getElementById(`tbl-leaderboard-${category}`);
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById(`page-info-${category}`);
+  const btnPrev = document.getElementById(`btn-prev-${category}`);
+  const btnNext = document.getElementById(`btn-next-${category}`);
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7">No hay proyectos registrados en esta categoría.</td></tr>';
+    return;
+  }
+
+  pageData.forEach((item, index) => {
+    const rank = start + index + 1;
+    const badgeClass = rank === 1 ? 'badge-1' : rank === 2 ? 'badge-2' : rank === 3 ? 'badge-3' : 'badge-other';
+    const votesCount = item.scores ? item.scores.length : (item.evaluacion ? item.evaluacion.length : 0);
+    
+    // 1. Calculate numeric average score
+    let avgScoreNum = 0;
+    if (item.scores && item.scores.length > 0) {
+      avgScoreNum = item.scores.reduce((sum, scoreObj) => sum + scoreObj.score, 0) / votesCount;
+    } else if (item.evaluacion && item.evaluacion.length > 0) {
+      avgScoreNum = item.evaluacion.reduce((sum, ev) => sum + (ev.Total || 0), 0) / votesCount;
+    }
+
+    const avgScore = avgScoreNum.toFixed(1);
+
+    // 2. Calculate Puntaje Total: (Puntaje Escrito * 0.5) + (Puntaje Promedio Jueces * 0.5)
+    const puntajeEscrito = Number(item.puntajeEscrito) || 0;
+    const puntajeTotal = ((puntajeEscrito * 0.5) + (avgScoreNum * 0.5)).toFixed(1);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="badge ${badgeClass}">${rank}</span></td>
+      <td><strong>${item.title || item.tituloProyecto}</strong></td>
+      <td>${item.centroEducativo || 'N/A'}</td>
+      <td>${votesCount} Juez(ces)</td>
+      <td>${puntajeEscrito} pts</td>
+      <td>${avgScore} pts prom.</td>
+      
+      <td class="score-cell">${puntajeTotal} pts</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+*/
+
+function renderLeaderboardPage(category) {
+  const state = paginationState[category];
+  const tbody = document.getElementById(`tbl-leaderboard-${category}`);
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById(`page-info-${category}`);
+  const btnPrev = document.getElementById(`btn-prev-${category}`);
+  const btnNext = document.getElementById(`btn-next-${category}`);
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7">No hay proyectos registrados en esta categoría.</td></tr>';
+    return;
+  }
+
+  pageData.forEach((item, index) => {
+    const rank = start + index + 1;
+    const badgeClass = rank === 1 ? 'badge-1' : rank === 2 ? 'badge-2' : rank === 3 ? 'badge-3' : 'badge-other';
+    const votesCount = item.scores ? item.scores.length : (item.evaluacion ? item.evaluacion.length : 0);
+    
+    // 1. Calculate numeric average score (N2)
+    let avgScoreNum = 0;
+    if (item.scores && item.scores.length > 0) {
+      avgScoreNum = item.scores.reduce((sum, scoreObj) => sum + scoreObj.score, 0) / votesCount;
+    } else if (item.evaluacion && item.evaluacion.length > 0) {
+      avgScoreNum = item.evaluacion.reduce((sum, ev) => sum + (ev.Total || 0), 0) / votesCount;
+    }
+
+    const avgScore = avgScoreNum.toFixed(1);
+    const N1 = Number(item.puntajeEscrito) || 0; // Puntaje Escrito
+    const N2 = avgScoreNum;                       // Puntaje Promedio Jueces
+
+    // 2. Set M1 and M2 depending on category
+    const cat = (item.categoria || category || '').toUpperCase();
+    const esStem = cat.includes('STEM') || cat.includes('STEAM');
+
+    const M1 = esStem ? 105 : 74; // Maximum total for puntaje escrito
+    const M2 = esStem ? 111 : 54;  // Maximum total for avgScoreNum
+
+    // 3. Calculate Puntaje Total: 50 * ((N1 / M1) + (N2 / M2))
+    const puntajeTotal = (50 * ((N1 / M1) + (N2 / M2))).toFixed(1);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="badge ${badgeClass}">${rank}</span></td>
+      <td><strong>${item.title || item.tituloProyecto}</strong></td>
+      <td>${item.centroEducativo || 'N/A'}</td>
+      <td>${votesCount} Juez(ces)</td>
+      <td>${N1} pts</td>
+      <td>${avgScore} pts prom.</td>
+      
+      <td class="score-cell">${puntajeTotal} pts</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+/*
 function changePageSize(category, newSize) {
   paginationState[category].pageSize = parseInt(newSize, 10);
   paginationState[category].currentPage = 1;
@@ -588,7 +1027,7 @@ function changePage(category, delta) {
     renderLeaderboardPage(category);
   }
 }
-
+*/
 // ==========================================
 // EVALUACIONES Y RÚBRICA
 // ==========================================
@@ -612,45 +1051,49 @@ const PREGUNTAS_MODELO_NEGOCIO = [
   { id: 'n', label: 'n. Expone una propuesta innovadora y creativa con respecto al mercado.' },
   { id: 'o', label: 'o. Describe las demandas del segmento de clientes y el seguimiento para asegurar la calidad de los bienes o servicios ofrecidos.' },
   { id: 'p', label: 'p. Expone las fuentes de ingresos y estructura de costos.' },
-  { id: 'q', label: 'q. Describe las alianzas estratégicas de su propuesta de valor.' }
+  { id: 'q', label: 'q. Explica los canales utilizados para dar a conocer su modelo de negocios.' },
+  { id: 'r', label: 'r. Describe las alianzas estratégicas de su propuesta de valor.' }
 ];
 
 const PREGUNTAS_STEM = [
-  { id: '1', label: '1. Delimita los antecedentes del problema o necesidad por solventar.' },
-  { id: '2', label: '2. Evidencia claridad en la definición del problema.' },
-  { id: '3', label: '3. Fundamenta la relevancia o utilidad potencial del proyecto.' },
-  { id: '4', label: '4. Define los criterios técnicos utilizados para la solución del problema.' },
-  { id: '5', label: '5. Evidencia la viabilidad del proyecto.' },
-  { id: '6', label: '6. Emplea variedad de fuentes de información confiables para sustentar el proyecto (tesis, libros, artículos, entrevistas, repositorios y páginas Web, entre otros).' },
-  { id: '7', label: '7. Incluye citas bibliográficas relevantes, de forma crítica dentro del texto, que documentan la investigación y desarrollo del proyecto.' },
-  { id: '8', label: '8. Emplea fuentes bibliográficas actualizadas, según el tema abordado en el proyecto.' },
-  { id: '9', label: '9. Define términos o conceptos relevantes para la investigación y desarrollo del proyecto.' },
-  { id: '10', label: '10. Sintetiza la información existente del tema en estudio.' },
-  { id: '11', label: '11. Evidencia la organización lógica de la información recopilada.' },
-  { id: '12', label: '12. Presenta el objetivo general y al menos dos objetivos específicos.' },
-  { id: '13', label: '13. Se plantean de forma clara, precisa y según estructura requerida: verbo en infinitivo, contenido y condición técnica.' },
-  { id: '14', label: '14. Evidencia relación con la propuesta de solución planteada.' },
-  { id: '15', label: '15. Presenta las etapas del proyecto en el cronograma.' },
-  { id: '16', label: '16. Cumple con las etapas establecidas en el cronograma.' },
-  { id: '17', label: '17. Describe paso a paso los procedimientos y técnicas utilizadas para la investigación y desarrollo.' },
-  { id: '18', label: '18. Describe los recursos utilizados para la implementación del proyecto.' },
-  { id: '19', label: '19. Evidencia procesos de mejora continua durante la investigación y desarrollo del proyecto.' },
-  { id: '20', label: '20. Evidencia el desarrollo de ideas novedosas o la aplicación creativa de conocimientos.' },
-  { id: '21', label: '21. Fundamenta los cálculos requeridos para las demostraciones.' },
-  { id: '22', label: '22. Incluye diseños y esquemas claros en relación con el desarrollo del prototipo.' },
-  { id: '23', label: '23. Muestra concordancia entre los resultados obtenidos y los objetivos planteados.' },
-  { id: '24', label: '24. Presenta los datos mediante tablas, diagramas, figuras, gráficos, entre otros, que sustenten los resultados obtenidos.' },
-  { id: '25', label: '25. Evidencia la interpretación de los resultados desde una visión analítica y reflexiva, sin delimitarse a describirlos.' },
-  { id: '26', label: '26. Demuestra resultados (producto) aplicables y útiles en la vida real.' },
-  { id: '27', label: '27. Presenta coherencia entre los diseños y esquemas con respecto al prototipo desarrollado.' },
-  { id: '28', label: '28. Plantea conclusiones relevantes en relación con los objetivos trazados, análisis de datos y prototipado.' },
-  { id: '29', label: '29. Concluye sobre el impacto ambiental, social o económico de la implementación del proyecto.' },
-  { id: '30', label: '30. Presenta una organización clara y lógica, en congruencia con la estructura dada en los lineamientos.' },
-  { id: '31', label: '31. Presenta el documento en formato de doble columna (IEEE, artículo de revista).' },
-  { id: '32', label: '32. Presenta el listado de referencias citadas en el documento, según formato APA vigente.' },
-  { id: '33', label: '33. Evidencia el proceso de investigación y desarrollo realizado.' },
-  { id: '34', label: '34. Cumple con el formato solicitado, según los lineamientos de la ExpoTÉCNICA.' },
-  { id: '35', label: '35. Presenta relación con el informe escrito.' }
+  { id: '1', label: '1. Define el problema de forma precisa.' },
+  { id: '2', label: '2. Plantea alternativas de solución que contemplen conceptos teóricos prácticos atinentes al problema.' },
+  { id: '3', label: '3. Propone objetivos vinculados con la búsqueda de soluciones al problema planteado.' },
+  { id: '4', label: '4. Evidencia el impacto del proyecto a nivel social, científico o tecnológico, tanto a corto como largo plazo.' },
+  { id: '5', label: '5. Demuestra capacidad para expresar ideas con seguridad y defender el proyecto planteado.' },
+  { id: '6', label: '6. Demuestra en su elaboración una línea de investigación y desarrollo coherente y clara.' },
+  { id: '7', label: '7. Argumenta, desde la implementación del proyecto, el análisis e interpretación de los datos recopilados.' },
+  { id: '8', label: '8. Evidencia la gestión de recursos y búsqueda de apoyo para la elaboración del proyecto.' },
+  { id: '9', label: '9. Demuestra originalidad y autoría propia del proyecto expuesto.' },
+  { id: '10', label: '10. Aplica la normativa vigente en el contexto del proyecto.' },
+  { id: '11', label: '11. Se evidencia la factibilidad e implementación comercial o industrial del proyecto, a futuro.' },
+  { id: '12', label: '12. Presenta una línea de trabajo de investigación y desarrollo coherente y clara.' },
+  { id: '13', label: '13. Da respuesta a la necesidad u objetivos planteados.' },
+  { id: '14', label: '14. Evidencia el uso óptimo de los recursos disponibles para su construcción.' },
+  { id: '15', label: '15. Demuestra precisión técnica en la elaboración y funcionamiento del prototipo, al aplicar de forma correcta los conocimientos científicos y tecnológicos en la solución presentada.' },
+  { id: '16', label: '16. Respeta las normativas de seguridad y otras vigentes en su construcción y desempeño.' },
+  { id: '17', label: '17. Muestra actualidad tecnológica en el campo de trabajo seleccionado.' },
+  { id: '18', label: '18. Evidencia el funcionamiento correcto según la solución planteada en el proyecto.' },
+  { id: '19', label: '19. Demuestra creatividad e innovación en el desarrollo de ideas nuevas o mejoradas al crear el prototipo.' },
+  { id: '20', label: '20. Evidencia apropiación y dominio del tema del proyecto.' },
+  { id: '21', label: '21. Demuestra claridad y coherencia en la exposición del proyecto ante el panel de jueces.' },
+  { id: '22', label: '22. Utiliza lenguaje técnico acorde con el nivel académico y el campo de desarrollo del proyecto.' },
+  { id: '23', label: '23. Argumenta de forma sólida y fundamentada su propuesta de proyecto.' },
+  { id: '24', label: '24. Emplea recursos afines con el tema del proyecto (diseños, diagramas, gráficos, esquemas, modelos, programas de computación, equipos, entre otros).' },
+  { id: '25', label: '25. Describe la metodología utilizada para la implementación, evaluación y perfeccionamiento de la solución propuesta.' },
+  { id: '26', label: '26. Presenta resultados consistentes con los objetivos y solución al problema planteado.' },
+  { id: '27', label: '27. Brinda conclusiones precisas y objetivas basadas en los resultados obtenidos.' },
+  { id: '28', label: '28. Denota colaboración y comunicación efectiva del estudiante o integrantes del equipo, según corresponda.' },
+  { id: '29', label: '29. Demuestra capacidad de recibir, analizar y aplicar sugerencias para mejorar el proyecto.' },
+  { id: '30', label: '30. Se evidencia congruencia entre lo expuesto por la persona estudiante o equipo y el informe escrito.' },
+  { id: '31', label: '31. Evidencia el uso de lenguaje técnico afín al tema del proyecto.' },
+  { id: '32', label: '32. Estipula los procedimientos técnicos utilizados.' },
+  { id: '33', label: '33. Investigación.' },
+  { id: '34', label: '34. Implementación.' },
+  { id: '35', label: '35. Experimentación.' },
+  { id: '36', label: '36. Contiene información relevante para la exposición del proyecto.' },
+  { id: '37', label: '37. Utiliza el cartel como recurso y apoyo para el desarrollo de la exposición.' }
+  
 ];
 
 async function cargarEvaluaciones() {
@@ -748,7 +1191,7 @@ function calcularPuntajeTotalEval() {
   document.getElementById('eval-total').value = sum;
 }
 
-// Render evaluation list with dynamic action buttons (Edit and Delete)
+// 1. Display evaluations table with conditional Edit button based on role/ownership
 function mostrarDetalleEvaluacion(proyectoId) {
   const tbody = document.getElementById('tbl-evaluaciones');
   if (!tbody) return;
@@ -783,7 +1226,7 @@ function mostrarDetalleEvaluacion(proyectoId) {
       <td>
         ${puedeEditar ? `
           <button class="btn-action btn-edit" onclick="prepararEdicionEvaluacion('${ev.id}')">Editar</button>
-          <button class="btn-action btn-delete" onclick="eliminarEvaluacion('${ev.id}')" style="background-color: #ef4444; color: white; margin-left: 4px;">Eliminar</button>
+          <button class="btn-action btn-delete" onclick="eliminarEvaluacion('${ev.id}')">Eliminar</button>
         ` : '-'}
       </td>
     `;
@@ -791,6 +1234,50 @@ function mostrarDetalleEvaluacion(proyectoId) {
   });
 }
 
+// New function to handle evaluation deletion request
+async function eliminarEvaluacion(evalId) {
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  if (!proyectoId) return;
+
+  if (!confirm('¿Está seguro de que desea eliminar esta evaluación?')) return;
+
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+  const juezId = currentUser ? (currentUser.id || currentUser._id || '') : '';
+  const token = sessionStorage.getItem('token');
+
+  try {
+    const res = await fetch(`${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ juezId, userRole })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Evaluación eliminada con éxito');
+
+      const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
+      if (proyectoIdx !== -1) {
+        proyectosCargados[proyectoIdx] = data.proyecto;
+      }
+
+      cancelarEdicionEvaluacion();
+      resetearVistaEvaluaciones();
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo eliminar la evaluación'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error de conexión con el servidor');
+  }
+}
+
+// 2. Load evaluation answers into form for editing
 function prepararEdicionEvaluacion(evalId) {
   const proyectoId = document.getElementById('select-eval-proyecto').value;
   const proyecto = proyectosCargados.find(p => p._id === proyectoId);
@@ -838,6 +1325,7 @@ function cancelarEdicionEvaluacion() {
   if (cancelBtn) cancelBtn.style.display = 'none';
 }
 
+// 3. Handle both POST (Create) and PUT (Edit) submissions
 async function guardarEvaluacion(event) {
   event.preventDefault();
 
@@ -904,56 +1392,9 @@ async function guardarEvaluacion(event) {
       }
 
       cancelarEdicionEvaluacion();
-      document.getElementById('select-eval-proyecto').value = proyectoId;
-      alSeleccionarProyecto(proyectoId);
+      resetearVistaEvaluaciones();
     } else {
       alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
-    }
-  } catch (err) {
-    console.error(err);
-    alert('❌ Error de conexión con el servidor');
-  }
-}
-
-// Deletes an evaluation from a project via DELETE /api/proyectos/:proyectoId/evaluaciones/:evalId
-async function eliminarEvaluacion(evalId) {
-  const proyectoId = document.getElementById('select-eval-proyecto').value;
-  if (!proyectoId || !evalId) return;
-
-  if (!confirm('⚠️ ¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
-    return;
-  }
-
-  const token = sessionStorage.getItem('token');
-  const url = `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}`;
-
-  try {
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert('✅ Evaluación eliminada con éxito');
-
-      const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
-      if (proyectoIdx !== -1) {
-        if (data.proyecto) {
-          proyectosCargados[proyectoIdx] = data.proyecto;
-        } else {
-          proyectosCargados[proyectoIdx].evaluacion = proyectosCargados[proyectoIdx].evaluacion.filter(e => String(e.id) !== String(evalId));
-        }
-      }
-
-      cancelarEdicionEvaluacion();
-      document.getElementById('select-eval-proyecto').value = proyectoId;
-      alSeleccionarProyecto(proyectoId);
-    } else {
-      alert('❌ Error: ' + (data.message || 'No se pudo eliminar la evaluación'));
     }
   } catch (err) {
     console.error(err);

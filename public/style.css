@@ -40,6 +40,20 @@ body.auth-page {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
+/* Logo Styling */
+.auth-logo {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.auth-logo img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+}
+
 .auth-card h2 {
   margin-bottom: 24px;
   font-size: 1.5rem;

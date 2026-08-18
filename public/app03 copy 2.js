@@ -445,7 +445,6 @@ function renderEstudiantesPage() {
       ? (item.projectId.title || item.projectId.tituloProyecto || 'Sin título') 
       : 'Sin asignación';
 
-    /*
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${item._id.substring(0,6)}...</td>
@@ -457,22 +456,6 @@ function renderEstudiantesPage() {
         <button class="btn-action btn-delete" id="btn-del-est-${item._id}">Eliminar</button>
       </td>
     `;
-    */
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item._id.substring(0,6)}...</td>
-      <td>${item.name}</td>
-      <td>${item.email}</td>
-      <td>${nombreProyecto}</td>
-      <td>
-        <div class="actions-container">
-          <button class="btn-action btn-edit" id="btn-edit-est-${item._id}">Editar</button>
-          <button class="btn-action btn-delete" id="btn-del-est-${item._id}">Eliminar</button>
-        </div>
-      </td>
-    `;
-
     tbody.appendChild(tr);
 
     document.getElementById(`btn-edit-est-${item._id}`).addEventListener('click', () => prepararEdicionEstudiante(item));

@@ -110,6 +110,12 @@
     .view-section.active { display: block; }
 
     /* Action Buttons */
+    .actions-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
     .btn-action {
       padding: 6px 12px;
       border: none;
@@ -118,10 +124,17 @@
       font-weight: bold;
       font-size: 0.8rem;
       transition: 0.2s;
+      white-space: nowrap;
+    }
+    .btn-action + .btn-action {
+      margin-left: 6px; /* Ensures spacing if not wrapped in .actions-container */
+    }
+    .actions-container .btn-action + .btn-action {
+      margin-left: 0; /* Prevents double spacing when inside .actions-container */
     }
     .btn-edit { background-color: var(--accent); color: #000; }
     .btn-edit:hover { background-color: var(--accent-hover); }
-    .btn-delete { background-color: var(--danger); color: #fff; margin-left: 4px; }
+    .btn-delete { background-color: var(--danger); color: #fff; }
     .btn-delete:hover { background-color: #dc2626; }
     .btn-cancel { background-color: #64748b; color: #fff; display: none; }
     .btn-cancel:hover { background-color: #475569; }
@@ -313,12 +326,15 @@
               <th>Proyecto</th>
               <th>Centro Educativo</th>
               <th>Evaluaciones</th>
+              <!-- Added: Puntaje Escrito Column -->
+              <th>Puntaje Escrito</th>
               <th>Promedio General</th>
+              
               <th>Puntuación Total</th>
             </tr>
           </thead>
           <tbody id="tbl-leaderboard-modelo">
-            <tr><td colspan="6">Cargando puntuaciones...</td></tr>
+            <tr><td colspan="7">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
         </div>
@@ -352,12 +368,15 @@
               <th>Proyecto</th>
               <th>Centro Educativo</th>
               <th>Evaluaciones</th>
+              <!-- Added: Puntaje Escrito Column -->
+              <th>Puntaje Escrito</th>
               <th>Promedio General</th>
+              
               <th>Puntuación Total</th>
             </tr>
           </thead>
           <tbody id="tbl-leaderboard-steam">
-            <tr><td colspan="6">Cargando puntuaciones...</td></tr>
+            <tr><td colspan="7">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
       </div>
@@ -528,6 +547,11 @@
               <label for="proy-eje">Eje Temático</label>
               <input type="text" id="proy-eje">
             </div>
+            <!-- ADDED: Puntaje Escrito Input -->
+            <div class="input-group">
+              <label for="proy-puntaje-escrito">Puntaje Escrito</label>
+              <input type="number" id="proy-puntaje-escrito" min="0" value="0">
+            </div>
           </div>
           <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
           <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>
@@ -543,6 +567,8 @@
               <th>Centro Educativo</th>
               <th>Categoría</th>
               <th>Eje Temático</th>
+              <!-- ADDED: Column Header -->
+              <th>Puntaje Escrito</th>
               <th>Acciones</th>
             </tr>
           </thead>

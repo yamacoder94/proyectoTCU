@@ -121,6 +121,8 @@
     }
     .btn-edit { background-color: var(--accent); color: #000; }
     .btn-edit:hover { background-color: var(--accent-hover); }
+    .btn-delete { background-color: var(--danger); color: #fff; margin-left: 4px; }
+    .btn-delete:hover { background-color: #dc2626; }
     .btn-cancel { background-color: #64748b; color: #fff; display: none; }
     .btn-cancel:hover { background-color: #475569; }
 
@@ -151,15 +153,24 @@
     .btn-submit { background: var(--accent); color: #000; font-weight: bold; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
     .btn-submit:hover { background: var(--accent-hover); }
 
-    /* Responsive Tables with Horizontal Scroll */
-    .table-container { 
-      background: var(--sidebar-bg); 
-      border-radius: 8px; 
-      overflow-x: auto; 
-      margin-bottom: 24px; 
-      border: 1px solid #475569; 
-      -webkit-overflow-scrolling: touch;
-    }
+/* Responsive Tables Container */
+.table-container { 
+  background: var(--sidebar-bg); 
+  border-radius: 8px; 
+  margin-bottom: 24px; 
+  border: 1px solid #475569; 
+  overflow: hidden; /* Prevents whole card scrolling and maintains rounded corners */
+}
+
+/* Inner scroll container for table content only */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+
+
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
     th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #475569; font-size: 0.9rem; }
     th { background: #0f172a; color: var(--text-muted); }
@@ -294,6 +305,7 @@
       <!-- Leaderboard: Modelo de Negocio -->
       <h2 class="category-title">💼 Categoría: Modelo de Negocio</h2>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -301,14 +313,18 @@
               <th>Proyecto</th>
               <th>Centro Educativo</th>
               <th>Evaluaciones</th>
+              <!-- Added: Puntaje Escrito Column -->
+              <th>Puntaje Escrito</th>
               <th>Promedio General</th>
+              
               <th>Puntuación Total</th>
             </tr>
           </thead>
           <tbody id="tbl-leaderboard-modelo">
-            <tr><td colspan="6">Cargando puntuaciones...</td></tr>
+            <tr><td colspan="7">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
+        </div>
         <!-- Pagination Controls Modelo -->
         <div class="pagination-bar">
           <div>
@@ -325,11 +341,13 @@
             <button id="btn-next-modelo" onclick="changePage('modelo', 1)">Siguiente ▶</button>
           </div>
         </div>
+      
       </div>
 
       <!-- Leaderboard: STEAM -->
       <h2 class="category-title">🔬 Categoría: STEAM</h2>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -337,14 +355,18 @@
               <th>Proyecto</th>
               <th>Centro Educativo</th>
               <th>Evaluaciones</th>
+              <!-- Added: Puntaje Escrito Column -->
+              <th>Puntaje Escrito</th>
               <th>Promedio General</th>
+              
               <th>Puntuación Total</th>
             </tr>
           </thead>
           <tbody id="tbl-leaderboard-steam">
-            <tr><td colspan="6">Cargando puntuaciones...</td></tr>
+            <tr><td colspan="7">Cargando puntuaciones...</td></tr>
           </tbody>
         </table>
+      </div>
         <!-- Pagination Controls STEAM -->
         <div class="pagination-bar">
           <div>
@@ -385,6 +407,7 @@
         </form>
       </div>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -397,6 +420,7 @@
           </thead>
           <tbody id="tbl-estudiantes"></tbody>
         </table>
+        </div>
 
         <!-- Pagination Controls Estudiantes -->
         <div class="pagination-bar">
@@ -417,7 +441,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN JUECES -->
+ <!-- SECCIÓN JUECES -->
     <div id="sec-jueces" class="view-section">
       <div class="header-bar"><h1>Gestión de Jueces</h1></div>
       <div class="form-container">
@@ -449,6 +473,7 @@
       </div>
 
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -461,10 +486,28 @@
           </thead>
           <tbody id="tbl-jueces"></tbody>
         </table>
+        </div>
+
+        <!-- Pagination Controls Jueces -->
+        <div class="pagination-bar">
+          <div>
+            <label for="select-size-jueces">Mostrar: </label>
+            <select id="select-size-jueces" onchange="changePageSize('jueces', this.value)">
+              <option value="10" selected>10 registros</option>
+              <option value="15">15 registros</option>
+              <option value="20">20 registros</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button id="btn-prev-jueces" onclick="changePage('jueces', -1)">◀ Anterior</button>
+            <span id="page-info-jueces">Página 1 de 1</span>
+            <button id="btn-next-jueces" onclick="changePage('jueces', 1)">Siguiente ▶</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- SECCIÓN PROYECTOS -->
+<!-- SECCIÓN PROYECTOS -->
     <div id="sec-proyectos" class="view-section">
       <div class="header-bar"><h1>Gestión de Proyectos</h1></div>
       <div class="form-container">
@@ -491,12 +534,18 @@
               <label for="proy-eje">Eje Temático</label>
               <input type="text" id="proy-eje">
             </div>
+            <!-- ADDED: Puntaje Escrito Input -->
+            <div class="input-group">
+              <label for="proy-puntaje-escrito">Puntaje Escrito</label>
+              <input type="number" id="proy-puntaje-escrito" min="0" value="0">
+            </div>
           </div>
           <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
           <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>
         </form>
       </div>
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -505,11 +554,31 @@
               <th>Centro Educativo</th>
               <th>Categoría</th>
               <th>Eje Temático</th>
+              <!-- ADDED: Column Header -->
+              <th>Puntaje Escrito</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbl-proyectos"></tbody>
         </table>
+        </div>
+
+        <!-- Pagination Controls Proyectos -->
+        <div class="pagination-bar">
+          <div>
+            <label for="select-size-proyectos">Mostrar: </label>
+            <select id="select-size-proyectos" onchange="changePageSize('proyectos', this.value)">
+              <option value="10" selected>10 registros</option>
+              <option value="15">15 registros</option>
+              <option value="20">20 registros</option>
+            </select>
+          </div>
+          <div class="pagination-controls">
+            <button id="btn-prev-proyectos" onclick="changePage('proyectos', -1)">◀ Anterior</button>
+            <span id="page-info-proyectos">Página 1 de 1</span>
+            <button id="btn-next-proyectos" onclick="changePage('proyectos', 1)">Siguiente ▶</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -532,6 +601,9 @@
       <div id="container-form-evaluacion" class="form-container" style="display: none;">
         <h3 style="margin-bottom: 16px; color: var(--accent);">➕ Agregar Nueva Evaluación</h3>
         <form id="form-evaluacion" onsubmit="guardarEvaluacion(event)">
+          <!-- Hidden field to store evaluation ID when editing -->
+          <input type="hidden" id="eval-id">
+
           <!-- Dynamic Rubric Questions Container -->
           <div id="eval-questions-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;"></div>
 
@@ -541,22 +613,26 @@
             <input type="number" id="eval-total" value="0" readonly style="background-color: var(--bg-dark); font-weight: bold; color: var(--accent); font-size: 1.2rem; width: 120px; text-align: center;">
           </div>
 
-          <button type="submit" class="btn-submit" style="margin-top: 16px; width: 100%;">💾 Guardar Evaluación</button>
+          <button type="submit" id="btn-submit-eval" class="btn-submit" style="margin-top: 16px; width: 100%;">💾 Guardar Evaluación</button>
+          <button type="button" id="btn-cancel-eval" class="btn-action btn-cancel" onclick="cancelarEdicionEvaluacion()" style="margin-top: 8px; width: 100%; display: none;">Cancelar</button>
         </form>
       </div>
 
       <div class="table-container">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr id="tbl-evaluaciones-header">
               <th>Juez</th>
               <th>Puntaje Total</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbl-evaluaciones">
-            <tr><td colspan="2">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>
+            <tr><td colspan="3">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
