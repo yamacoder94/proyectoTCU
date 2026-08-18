@@ -535,9 +535,10 @@
               <label for="proy-centro">Centro Educativo</label>
               <input type="text" id="proy-centro" required>
             </div>
+
             <div class="input-group">
               <label for="proy-cat">Categoría</label>
-              <select id="proy-cat" required>
+              <select id="proy-cat" required onchange="validarPuntajeEscritoMax()">
                 <option value="">-- Seleccionar Categoría --</option>
                 <option value="Modelo de Negocio">Modelo de Negocio</option>
                 <option value="STEAM">STEAM</option>
@@ -547,11 +548,14 @@
               <label for="proy-eje">Eje Temático</label>
               <input type="text" id="proy-eje">
             </div>
+
             <!-- ADDED: Puntaje Escrito Input -->
             <div class="input-group">
               <label for="proy-puntaje-escrito">Puntaje Escrito</label>
-              <input type="number" id="proy-puntaje-escrito" min="0" value="0">
+              <input type="number" id="proy-puntaje-escrito" min="0" max="72" value="0" oninput="validarPuntajeEscritoMax()">
             </div>
+
+
           </div>
           <button type="submit" id="btn-submit-proy" class="btn-submit">Agregar Proyecto</button>
           <button type="button" id="btn-cancel-proy" class="btn-action btn-cancel" onclick="cancelarEdicion('proy')">Cancelar</button>

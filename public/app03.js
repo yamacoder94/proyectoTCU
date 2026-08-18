@@ -216,6 +216,7 @@ async function guardarJuez(event) {
   await enviarDatosAPI('jueces', payload, cargarJueces, id);
 }
 
+/*
 async function guardarProyecto(event) {
   event.preventDefault();
   const id = document.getElementById('proy-id').value;
@@ -238,6 +239,57 @@ async function guardarProyecto(event) {
 
   await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
 }
+*/
+
+async function guardarProyecto(event) {
+  event.preventDefault();
+  const id = document.getElementById('proy-id').value;
+  const categoria = document.getElementById('proy-cat').value;
+  const puntajeEscrito = Number(document.getElementById('proy-puntaje-escrito').value) || 0;
+
+  // Validate maximum written score per category
+  const esStem = categoria.toUpperCase().includes('STEAM') || categoria.toUpperCase().includes('STEM');
+  const maximoPermitido = esStem ? 105 : 72;
+
+  if (puntajeEscrito > maximoPermitido) {
+    alert(`❌ El puntaje escrito para la categoría "${categoria}" no puede ser mayor a ${maximoPermitido}.`);
+    return;
+  }
+
+  const payload = {
+    tituloProyecto: document.getElementById('proy-nombre').value,
+    centroEducativo: document.getElementById('proy-centro').value,
+    categoria: categoria,
+    ejeTematico: document.getElementById('proy-eje').value,
+    puntajeEscrito: puntajeEscrito
+  };
+
+  if (!id) {
+    payload.estudiante = [{ idEstudiante: "", nombre: "" }];
+    payload.puntajeTotal = 0;
+    payload.evaluacion = [];
+  }
+
+  await enviarDatosAPI('proyectos', payload, cargarProyectos, id);
+}
+
+function validarPuntajeEscritoMax() {
+  const catInput = document.getElementById('proy-cat');
+  const scoreInput = document.getElementById('proy-puntaje-escrito');
+  if (!catInput || !scoreInput) return;
+
+  const categoria = catInput.value.toUpperCase();
+  const esStem = categoria.includes('STEAM') || categoria.includes('STEM');
+  const maximo = esStem ? 105 : 72;
+
+  scoreInput.max = maximo;
+
+  if (Number(scoreInput.value) > maximo) {
+    alert(`⚠️ El puntaje escrito máximo para la categoría seleccionada es ${maximo}.`);
+    scoreInput.value = maximo;
+  }
+}
+
 
 function prepararEdicionEstudiante(est) {
   document.getElementById('est-id').value = est._id;
@@ -322,6 +374,59 @@ async function eliminarEstudiante(id) {
   }
 }
 
+async function eliminarJuez(id) {
+  if (!confirm('¿Está seguro de que desea eliminar este juez?')) return;
+
+  const token = sessionStorage.getItem('token');
+
+  try {
+    const res = await fetch(`${API_URL}/jueces/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Juez eliminado con éxito');
+      cargarJueces();
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo eliminar el juez'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error de conexión con el servidor');
+  }
+}
+
+async function eliminarProyecto(id) {
+  if (!confirm('¿Está seguro de que desea eliminar este proyecto?')) return;
+
+  const token = sessionStorage.getItem('token');
+
+  try {
+    const res = await fetch(`${API_URL}/proyectos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Proyecto eliminado con éxito');
+      cargarProyectos();
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo eliminar el proyecto'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error de conexión con el servidor');
+  }
+}
 
 // ==========================================
 // MÉTODOS DE OBTENCIÓN Y RENDERIZADO (GET)
@@ -537,6 +642,7 @@ async function cargarJueces() {
   renderJuecesPage();
 }
 
+/*
 function renderJuecesPage() {
   const state = paginationState.jueces;
   const tbody = document.getElementById('tbl-jueces');
@@ -592,7 +698,67 @@ function renderJuecesPage() {
     document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
   });
 }
+*/
 
+function renderJuecesPage() {
+  const state = paginationState.jueces;
+  const tbody = document.getElementById('tbl-jueces');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-jueces');
+  const btnPrev = document.getElementById('btn-prev-jueces');
+  const btnNext = document.getElementById('btn-next-jueces');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">No hay jueces registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const nombre = item.name || item.nombre || item.email || 'Sin nombre';
+
+    let proyectosTexto = 'Ninguno';
+    if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
+      proyectosTexto = item.assignedProjects
+        .map(p => (typeof p === 'object' && p !== null) ? (p.tituloProyecto || p.title || 'Sin título') : p)
+        .join(', ');
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${nombre}</td>
+      <td>${item.email}</td>
+      <td>${proyectosTexto}</td>
+      <td>
+        <div class="actions-container">
+          <button class="btn-action btn-edit" id="btn-edit-juez-${item._id}">Editar</button>
+          <button class="btn-action btn-delete" id="btn-del-juez-${item._id}">Eliminar</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-juez-${item._id}`).addEventListener('click', () => prepararEdicionJuez(item));
+    document.getElementById(`btn-del-juez-${item._id}`).addEventListener('click', () => eliminarJuez(item._id));
+  });
+}
 
 
 async function cargarOpcionesProyectosJuez() {
@@ -710,6 +876,9 @@ function renderProyectosPage() {
   });
 }
 */
+
+//Latest version prior to delete button addition
+/*
 function renderProyectosPage() {
   const state = paginationState.proyectos;
   const tbody = document.getElementById('tbl-proyectos');
@@ -758,7 +927,60 @@ function renderProyectosPage() {
     document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
   });
 }
+*/
 
+function renderProyectosPage() {
+  const state = paginationState.proyectos;
+  const tbody = document.getElementById('tbl-proyectos');
+  if (!tbody) return;
+
+  const totalItems = state.data.length;
+  const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+
+  if (state.currentPage > totalPages) state.currentPage = totalPages;
+  if (state.currentPage < 1) state.currentPage = 1;
+
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + Number(state.pageSize);
+  const pageData = state.data.slice(start, end);
+
+  const pageInfo = document.getElementById('page-info-proyectos');
+  const btnPrev = document.getElementById('btn-prev-proyectos');
+  const btnNext = document.getElementById('btn-next-proyectos');
+
+  if (pageInfo) pageInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= totalPages || totalPages === 0;
+
+  tbody.innerHTML = '';
+
+  if (!pageData || pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7">No hay proyectos registrados.</td></tr>';
+    return;
+  }
+
+  pageData.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id.substring(0,6)}...</td>
+      <td>${item.tituloProyecto || item.title || '-'}</td>
+      <td>${item.centroEducativo || '-'}</td>
+      <td>${item.categoria || '-'}</td>
+      <td>${item.ejeTematico || '-'}</td>
+      <td>${item.puntajeEscrito ?? 0} pts</td>
+      <td>
+        <div class="actions-container">
+          <button class="btn-action btn-edit" id="btn-edit-proy-${item._id}">Editar</button>
+          <button class="btn-action btn-delete" id="btn-del-proy-${item._id}">Eliminar</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById(`btn-edit-proy-${item._id}`).addEventListener('click', () => prepararEdicionProyecto(item));
+    document.getElementById(`btn-del-proy-${item._id}`).addEventListener('click', () => eliminarProyecto(item._id));
+  });
+}
 
 
 /*
