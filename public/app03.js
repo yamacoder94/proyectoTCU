@@ -1737,14 +1737,14 @@ function mostrarDetalleEvaluacion(proyectoId) {
   tbody.innerHTML = '';
 
   if (!proyectoId) {
-    tbody.innerHTML = '<tr><td colspan="3">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4">Seleccione un proyecto de la lista superior para ver sus evaluaciones.</td></tr>';
     return;
   }
 
   const proyecto = proyectosCargados.find(p => p._id === proyectoId);
 
   if (!proyecto || !proyecto.evaluacion || proyecto.evaluacion.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4">Este proyecto aún no cuenta con evaluaciones registradas.</td></tr>';
     return;
   }
 
@@ -1764,8 +1764,10 @@ function mostrarDetalleEvaluacion(proyectoId) {
       <td style="max-width: 250px; word-break: break-word;">${ev.comentarios || '-'}</td>
       <td>
         ${puedeEditar ? `
+          <div class="actions-container">
           <button class="btn-action btn-edit" onclick="prepararEdicionEvaluacion('${ev.id}')">Editar</button>
           <button class="btn-action btn-delete" onclick="eliminarEvaluacion('${ev.id}')">Eliminar</button>
+          </div>
         ` : '-'}
       </td>
     `;
