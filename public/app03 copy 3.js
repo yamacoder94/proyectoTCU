@@ -17,36 +17,11 @@ const paginationState = {
 // ROL Y PERMISOS DE NAVEGACIÓN
 // ==========================================
 
-/*/
 function obtenerUsuarioActual() {
   const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
   if (userStr) {
     try { return JSON.parse(userStr); } catch (e) {}
   }
-  return null;
-}
-*/
-
-function obtenerUsuarioActual() {
-  const userStr = sessionStorage.getItem('user') || localStorage.getItem('currentUser');
-  if (userStr) {
-    try { 
-      return JSON.parse(userStr); 
-    } catch (e) {}
-  }
-
-  // Fallback: decode JWT payload if session storage object is missing
-  const token = sessionStorage.getItem('token');
-  if (token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(base64));
-    } catch (e) {
-      console.error("Error al decodificar token de usuario:", e);
-    }
-  }
-
   return null;
 }
 
@@ -77,7 +52,6 @@ function obtenerRolUsuario() {
 function applyRolePermissions() {
   const userRole = obtenerRolUsuario();
 
-  /*
   if (userRole.toLowerCase() === 'juez') {
     const hiddenTabIds = ['nav-leaderboard','nav-estudiantes', 'nav-jueces', 'nav-proyectos'];
     hiddenTabIds.forEach(id => {
@@ -88,29 +62,8 @@ function applyRolePermissions() {
     const titleEl = document.getElementById('panel-title');
     if (titleEl) titleEl.textContent = '⚖️ Panel Juez';
   }
-  */
- if (userRole.toLowerCase() === 'juez') {
-    const hiddenTabIds = ['nav-leaderboard', 'nav-estudiantes', 'nav-jueces', 'nav-proyectos'];
-    hiddenTabIds.forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) btn.style.display = 'none';
-    });
-
-    const dashBtn = document.getElementById('nav-juez-dashboard');
-    if (dashBtn) dashBtn.style.display = 'flex';
-
-    const titleEl = document.getElementById('panel-title');
-    if (titleEl) titleEl.textContent = '⚖️ Panel Juez';
-  } else {
-    // Ocultar el Dashboard de Juez si el usuario es Admin
-    const dashBtn = document.getElementById('nav-juez-dashboard');
-    if (dashBtn) dashBtn.style.display = 'none';
-  }
-
-
 }
 
-/*
 function switchTab(tabName) {
   const userRole = obtenerRolUsuario();
   const adminOnlyTabs = ['leaderboard','estudiantes', 'jueces', 'proyectos'];
@@ -155,49 +108,6 @@ function switchTab(tabName) {
     }
   }
 }
-*/
-function switchTab(tabName) {
-  const userRole = obtenerRolUsuario();
-  const adminOnlyTabs = ['leaderboard', 'estudiantes', 'jueces', 'proyectos'];
-
-  if (userRole.toLowerCase() === 'juez' && adminOnlyTabs.includes(tabName)) {
-    console.warn('Acceso denegado: Tu perfil de Juez no tiene acceso a este módulo.');
-    return;
-  }
-
-  if (userRole.toLowerCase() !== 'juez' && tabName === 'juez-dashboard') {
-    console.warn('Acceso denegado: Este módulo solo está disponible para Jueces.');
-    return;
-  }
-
-  document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-  
-  const targetSec = document.getElementById(`sec-${tabName}`);
-  const targetBtn = document.getElementById(`nav-${tabName}`);
-
-  if (targetSec) targetSec.classList.add('active');
-  if (targetBtn) targetBtn.classList.add('active');
-
-  resetearVistaEvaluaciones();
-
-  if (tabName === 'leaderboard') {
-    loadLeaderboardData();
-  } else if (tabName === 'estudiantes') {
-    cargarOpcionesProyectos();
-    cargarEstudiantes();
-  } else if (tabName === 'jueces') {
-    cargarOpcionesProyectosJuez();
-    cargarJueces();
-  } else if (tabName === 'proyectos') {
-    cargarProyectos();
-  } else if (tabName === 'evaluaciones') {
-    if (typeof cargarEvaluaciones === 'function') cargarEvaluaciones();
-  } else if (tabName === 'juez-dashboard') {
-    cargarJuezDashboard();
-  }
-}
-
 
 function logout() {
   sessionStorage.removeItem('token');
@@ -269,95 +179,6 @@ async function cargarOpcionesProyectos() {
     select.innerHTML = '<option value="">No hay proyectos disponibles</option>';
   }
 }
-
-// 3. Función para cargar los datos del Juez y sus proyectos en modo SOLO LECTURA
-async function cargarJuezDashboard() {
-  const currentUser = obtenerUsuarioActual();
-  if (!currentUser) return;
-
-  const nameEl = document.getElementById('dash-juez-nombre');
-  const emailEl = document.getElementById('dash-juez-correo');
-  const totalEl = document.getElementById('dash-juez-total-proyectos');
-  const tbody = document.getElementById('tbl-juez-dashboard');
-
-  if (tbody) tbody.innerHTML = '<tr><td colspan="6">Cargando proyectos asignados...</td></tr>';
-
-  // Fetch all judges from API to get full profile details (name and assigned projects)
-  const todosJueces = await fetchDatosAPI('jueces');
-  let juezProfile = null;
-
-  if (todosJueces && todosJueces.length > 0) {
-    juezProfile = todosJueces.find(j => 
-      (currentUser.id && String(j._id) === String(currentUser.id)) ||
-      (currentUser._id && String(j._id) === String(currentUser._id)) ||
-      (currentUser.email && j.email && j.email.toLowerCase() === currentUser.email.toLowerCase())
-    );
-  }
-
-  // Resolve full name prioritizing database profile > session user object > email
-  const nombreCompleto = juezProfile?.name || juezProfile?.nombre || 
-                         currentUser.name || currentUser.nombre || 
-                         currentUser.email || 'Juez';
-
-  if (nameEl) nameEl.textContent = nombreCompleto;
-  if (emailEl) emailEl.textContent = currentUser.email || juezProfile?.email || '-';
-
-  const todosProyectos = await fetchDatosAPI('proyectos');
-  if (!todosProyectos || todosProyectos.length === 0) {
-    if (totalEl) totalEl.textContent = '0';
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6">No hay proyectos registrados en el sistema.</td></tr>';
-    return;
-  }
-
-  // Map assigned project IDs from either the DB profile or session user
-  const assignedProjectsSource = juezProfile?.assignedProjects || currentUser.assignedProjects || [];
-  const assignedIds = assignedProjectsSource.map(p => 
-    typeof p === 'string' ? p : (p.id || p._id)
-  );
-
-  const misProyectos = todosProyectos.filter(p => assignedIds.includes(p._id));
-
-  if (totalEl) totalEl.textContent = misProyectos.length;
-
-  if (misProyectos.length === 0) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6">No tiene proyectos asignados actualmente.</td></tr>';
-    return;
-  }
-
-  if (tbody) tbody.innerHTML = '';
-
-  misProyectos.forEach(proy => {
-    const currentUserId = currentUser.id || currentUser._id || juezProfile?._id || '';
-    const evaluacionExistente = (proy.evaluacion || []).find(e => 
-      e.juez && String(e.juez.id) === String(currentUserId)
-    );
-
-    const estadoText = evaluacionExistente 
-      ? '<span style="color: #4ade80; font-weight: bold;">✅ Evaluado</span>' 
-      : '<span style="color: #f59e0b; font-weight: bold;">⏳ Pendiente</span>';
-
-    const puntajeText = evaluacionExistente 
-      ? `<strong class="score-cell">${evaluacionExistente.Total || 0} pts</strong>` 
-      : '-';
-
-    const comentariosText = evaluacionExistente 
-      ? (evaluacionExistente.comentarios || '-') 
-      : '-';
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${proy.tituloProyecto || proy.title || 'Sin título'}</strong></td>
-      <td>${proy.centroEducativo || 'N/A'}</td>
-      <td>${proy.categoria || 'N/A'}</td>
-      <td>${estadoText}</td>
-      <td>${puntajeText}</td>
-      <td style="max-width: 250px; word-break: break-word;">${comentariosText}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-
 
 async function guardarEstudiante(event) {
   event.preventDefault();
@@ -1993,7 +1814,7 @@ function initApp() {
 
   if (userRole.toLowerCase() === 'juez') {
     // Automatically switch judges to the Evaluaciones view
-    switchTab('juez-dashboard');
+    switchTab('evaluaciones');
   } else {
     // Default view for admins
     switchTab('leaderboard');

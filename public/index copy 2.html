@@ -282,8 +282,6 @@
     <h2 id="panel-title">⚙️ Admin Panel</h2>
     <button id="nav-leaderboard" class="nav-btn active" onclick="handleNavClick('leaderboard')">🏆 Leaderboard</button>
     <button id="nav-estudiantes" class="nav-btn" onclick="handleNavClick('estudiantes')">🎓 Estudiantes</button>
-    <!-- adding Juez Dashboard  -->
-    <button id="nav-juez-dashboard" class="nav-btn" onclick="handleNavClick('juez-dashboard')">📊 Mi Dashboard</button>
     <button id="nav-jueces" class="nav-btn" onclick="handleNavClick('jueces')">⚖️ Jueces</button>
     <button id="nav-proyectos" class="nav-btn" onclick="handleNavClick('proyectos')">🚀 Proyectos</button>
     <button id="nav-evaluaciones" class="nav-btn" onclick="handleNavClick('evaluaciones')">📝 Evaluaciones</button>
@@ -455,52 +453,6 @@
         </div>
       </div>
     </div>
-
-
-<!-- SECCIÓN JUEZ DASHBOARD -->
-<div id="sec-juez-dashboard" class="view-section">
-  <div class="header-bar">
-    <h1>📊 Dashboard del Juez</h1>
-  </div>
-
-  <!-- Información del Juez -->
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-title">Nombre Completo</div>
-      <div class="kpi-value" id="dash-juez-nombre" style="color: var(--text);">-</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-title">Correo Electrónico</div>
-      <div class="kpi-value" id="dash-juez-correo" style="font-size: 1rem; color: var(--accent);">-</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-title">Proyectos Asignados</div>
-      <div class="kpi-value" id="dash-juez-total-proyectos">-</div>
-    </div>
-  </div>
-
-  <!-- Tabla de Proyectos Asignados y Evaluaciones (Solo Lectura) -->
-  <h2 class="category-title">🚀 Proyectos Asignados y Estado de Evaluación</h2>
-  <div class="table-container">
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Proyecto</th>
-            <th>Centro Educativo</th>
-            <th>Categoría</th>
-            <th>Estado</th>
-            <th>Puntaje Evaluado</th>
-            <th>Comentarios</th>
-          </tr>
-        </thead>
-        <tbody id="tbl-juez-dashboard">
-          <tr><td colspan="6">Cargando información...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
  <!-- SECCIÓN JUECES -->
     <div id="sec-jueces" class="view-section">
