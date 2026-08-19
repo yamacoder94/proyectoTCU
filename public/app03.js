@@ -53,7 +53,7 @@ function applyRolePermissions() {
   const userRole = obtenerRolUsuario();
 
   if (userRole.toLowerCase() === 'juez') {
-    const hiddenTabIds = ['nav-estudiantes', 'nav-jueces', 'nav-proyectos'];
+    const hiddenTabIds = ['nav-leaderboard','nav-estudiantes', 'nav-jueces', 'nav-proyectos'];
     hiddenTabIds.forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.style.display = 'none';
@@ -66,7 +66,7 @@ function applyRolePermissions() {
 
 function switchTab(tabName) {
   const userRole = obtenerRolUsuario();
-  const adminOnlyTabs = ['estudiantes', 'jueces', 'proyectos'];
+  const adminOnlyTabs = ['leaderboard','estudiantes', 'jueces', 'proyectos'];
 
   if (userRole.toLowerCase() === 'juez' && adminOnlyTabs.includes(tabName)) {
     console.warn('Acceso denegado: Tu perfil de Juez no tiene acceso a este módulo.');
@@ -446,6 +446,7 @@ async function fetchDatosAPI(endpoint) {
   }
 }
 
+/*
 async function cargarEstudiantes() {
   const tbody = document.getElementById('tbl-estudiantes');
   tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
@@ -461,6 +462,45 @@ async function cargarEstudiantes() {
   paginationState.estudiantes.data = data;
   renderEstudiantesPage();
 }
+*/
+
+async function cargarEstudiantes() {
+  const tbody = document.getElementById('tbl-estudiantes');
+  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('estudiantes');
+  
+  if (!data || data.length === 0) {
+    paginationState.estudiantes.data = [];
+    renderEstudiantesPage();
+    return;
+  }
+
+  // Ordenar numéricamente por el prefijo del proyecto
+  data.sort((a, b) => {
+    const projA = typeof a.projectId === 'object' && a.projectId 
+      ? (a.projectId.title || a.projectId.tituloProyecto || '') 
+      : '';
+    const projB = typeof b.projectId === 'object' && b.projectId 
+      ? (b.projectId.title || b.projectId.tituloProyecto || '') 
+      : '';
+
+    const numA = parseInt(projA, 10);
+    const numB = parseInt(projB, 10);
+
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numA - numB;
+    }
+    if (!isNaN(numA)) return -1;
+    if (!isNaN(numB)) return 1;
+
+    return projA.localeCompare(projB, 'es', { sensitivity: 'base' });
+  });
+
+  paginationState.estudiantes.data = data;
+  renderEstudiantesPage();
+}
+
 
 /*
 function renderEstudiantesPage() {
@@ -626,6 +666,7 @@ async function cargarJueces() {
 }
 */
 
+/*
 async function cargarJueces() {
   const tbody = document.getElementById('tbl-jueces');
   tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
@@ -641,6 +682,50 @@ async function cargarJueces() {
   paginationState.jueces.data = data;
   renderJuecesPage();
 }
+*/
+
+async function cargarJueces() {
+  const tbody = document.getElementById('tbl-jueces');
+  tbody.innerHTML = '<tr><td colspan="5">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('jueces');
+  
+  if (!data || data.length === 0) {
+    paginationState.jueces.data = [];
+    renderJuecesPage();
+    return;
+  }
+
+  const obtenerTextoProyectos = (item) => {
+    if (Array.isArray(item.assignedProjects) && item.assignedProjects.length > 0) {
+      return item.assignedProjects
+        .map(p => (typeof p === 'object' && p !== null) ? (p.tituloProyecto || p.title || '') : String(p))
+        .join(', ');
+    }
+    return '';
+  };
+
+  // Ordenar numéricamente por el primer número de proyecto asignado
+  data.sort((a, b) => {
+    const projA = obtenerTextoProyectos(a);
+    const projB = obtenerTextoProyectos(b);
+
+    const numA = parseInt(projA, 10);
+    const numB = parseInt(projB, 10);
+
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numA - numB;
+    }
+    if (!isNaN(numA)) return -1;
+    if (!isNaN(numB)) return 1;
+
+    return projA.localeCompare(projB, 'es', { sensitivity: 'base' });
+  });
+
+  paginationState.jueces.data = data;
+  renderJuecesPage();
+}
+
 
 /*
 function renderJuecesPage() {
@@ -811,6 +896,8 @@ async function cargarProyectos() {
   });
 }
 */
+
+/*
 async function cargarProyectos() {
   const tbody = document.getElementById('tbl-proyectos');
   tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
@@ -826,6 +913,41 @@ async function cargarProyectos() {
   paginationState.proyectos.data = data;
   renderProyectosPage();
 }
+*/
+
+async function cargarProyectos() {
+  const tbody = document.getElementById('tbl-proyectos');
+  tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
+  
+  const data = await fetchDatosAPI('proyectos');
+  
+  if (!data || data.length === 0) {
+    paginationState.proyectos.data = [];
+    renderProyectosPage();
+    return;
+  }
+
+  // Ordenar numéricamente por el prefijo del título del proyecto
+  data.sort((a, b) => {
+    const titleA = a.tituloProyecto || a.title || '';
+    const titleB = b.tituloProyecto || b.title || '';
+
+    const numA = parseInt(titleA, 10);
+    const numB = parseInt(titleB, 10);
+
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numA - numB;
+    }
+    if (!isNaN(numA)) return -1;
+    if (!isNaN(numB)) return 1;
+
+    return titleA.localeCompare(titleB, 'es', { sensitivity: 'base' });
+  });
+
+  paginationState.proyectos.data = data;
+  renderProyectosPage();
+}
+
 
 /*
 function renderProyectosPage() {
@@ -1460,6 +1582,7 @@ function mostrarDetalleEvaluacion(proyectoId) {
     tr.innerHTML = `
       <td>${ev.juez ? (ev.juez.nombre || 'Juez') : 'Juez'}</td>
       <td class="score-cell">${ev.Total || 0} pts</td>
+      <td style="max-width: 250px; word-break: break-word;">${ev.comentarios || '-'}</td>
       <td>
         ${puedeEditar ? `
           <button class="btn-action btn-edit" onclick="prepararEdicionEvaluacion('${ev.id}')">Editar</button>
@@ -1525,6 +1648,12 @@ function prepararEdicionEvaluacion(evalId) {
 
   document.getElementById('eval-id').value = evaluacion.id;
 
+  // Cargar comentarios existentes en el campo del formulario (NUEVO)
+  const comentariosEl = document.getElementById('eval-comentarios');
+  if (comentariosEl) {
+    comentariosEl.value = evaluacion.comentarios || '';
+  }
+
   if (evaluacion.preguntas) {
     Object.keys(evaluacion.preguntas).forEach(qKey => {
       const input = document.getElementById(`eval-preg-${qKey}`);
@@ -1556,6 +1685,9 @@ function cancelarEdicionEvaluacion() {
   const totalEl = document.getElementById('eval-total');
   if (totalEl) totalEl.value = 0;
 
+  const comentariosEl = document.getElementById('eval-comentarios');
+  if (comentariosEl) comentariosEl.value = '';
+
   const submitBtn = document.getElementById('btn-submit-eval');
   const cancelBtn = document.getElementById('btn-cancel-eval');
   if (submitBtn) submitBtn.textContent = '💾 Guardar Evaluación';
@@ -1568,6 +1700,7 @@ async function guardarEvaluacion(event) {
 
   const proyectoId = document.getElementById('select-eval-proyecto').value;
   const evalId = document.getElementById('eval-id').value;
+  const comentarios = document.getElementById('eval-comentarios').value.trim() || '';
 
   if (!proyectoId) {
     alert('Por favor seleccione un proyecto.');
@@ -1586,6 +1719,7 @@ async function guardarEvaluacion(event) {
     nombreJuez: nombreJuez,
     juezId: juezId,
     userRole: userRole,
+    comentarios: comentarios,
     preguntasDetalle: {}
   };
 
@@ -1659,9 +1793,32 @@ async function guardarEvaluacion(event) {
 // INICIALIZACIÓN
 // ==========================================
 
+/*
 function initApp() {
   applyRolePermissions();
   loadLeaderboardData();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+*/
+
+function initApp() {
+  applyRolePermissions();
+
+  // Check the logged-in user's role
+  const userRole = obtenerRolUsuario();
+
+  if (userRole.toLowerCase() === 'juez') {
+    // Automatically switch judges to the Evaluaciones view
+    switchTab('evaluaciones');
+  } else {
+    // Default view for admins
+    switchTab('leaderboard');
+  }
 }
 
 if (document.readyState === 'loading') {

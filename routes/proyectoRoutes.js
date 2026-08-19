@@ -284,7 +284,7 @@ router.post('/:id/evaluaciones', async (req, res) => {
 router.post('/:id/evaluaciones', async (req, res) => {
   try {
     const { id } = req.params;
-    const { total, nombreJuez, juezId, preguntasDetalle } = req.body;
+    const { total, nombreJuez, juezId, comentarios, preguntasDetalle } = req.body;
 
     // 1. Fetch project to ensure it exists
     const proyecto = await Proyecto.findById(id);
@@ -300,6 +300,7 @@ router.post('/:id/evaluaciones', async (req, res) => {
         nombre: nombreJuez || "Juez"
       },
       Total: Number(total) || 0,
+      comentarios: comentarios || "",
       preguntas: preguntasDetalle || {}
     };
 
@@ -327,7 +328,7 @@ router.post('/:id/evaluaciones', async (req, res) => {
 router.put('/:id/evaluaciones/:evalId', async (req, res) => {
   try {
     const { id, evalId } = req.params;
-    const { total, preguntasDetalle, juezId, userRole } = req.body;
+    const { total, preguntasDetalle, juezId,comentarios, userRole } = req.body;
 
     // 1. Find project
     const proyecto = await Proyecto.findById(id);
@@ -355,6 +356,10 @@ router.put('/:id/evaluaciones/:evalId', async (req, res) => {
     proyecto.evaluacion[evalIndex].Total = Number(total) || 0;
     if (preguntasDetalle) {
       proyecto.evaluacion[evalIndex].preguntas = preguntasDetalle;
+    }
+
+    if (comentarios !== undefined) {
+      proyecto.evaluacion[evalIndex].comentarios = comentarios;
     }
 
     // Mark mixed array modified and save
@@ -422,6 +427,7 @@ router.delete('/:id/evaluaciones/:evalId', async (req, res) => {
 
 
 // ==========================================
+/*
 router.post('/evaluacion-sheet', async (req, res) => {
   try {
     const { tituloProyecto, total, nombreJuez } = req.body;
@@ -471,5 +477,6 @@ router.post('/evaluacion-sheet', async (req, res) => {
     res.status(500).json({ message: 'Error interno: ' + err.message });
   }
 });
+*/
 
 module.exports = router;
