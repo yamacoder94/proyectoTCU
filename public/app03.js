@@ -358,13 +358,44 @@ async function cargarJuezDashboard() {
 }
 
 
-
+/*
 async function guardarEstudiante(event) {
   event.preventDefault();
   const id = document.getElementById('est-id').value;
   
   const payload = {
     projectId: document.getElementById('est-proid').value,
+    name: document.getElementById('est-nombre').value,
+    email: document.getElementById('est-correo').value
+  };
+
+  await enviarDatosAPI('estudiantes', payload, cargarEstudiantes, id);
+}
+*/
+
+async function guardarEstudiante(event) {
+  event.preventDefault();
+  const id = document.getElementById('est-id').value;
+  const selectedProjectId = document.getElementById('est-proid').value;
+
+  // Obtener estudiantes actuales para validar el cupo por proyecto
+  const estudiantes = await fetchDatosAPI('estudiantes');
+  
+  if (estudiantes) {
+    // Filtrar los estudiantes pertenecientes al mismo proyecto (excluyendo al actual en caso de edición)
+    const estudiantesEnProyecto = estudiantes.filter(est => {
+      const pId = typeof est.projectId === 'object' && est.projectId ? est.projectId._id : est.projectId;
+      return pId === selectedProjectId && String(est._id) !== String(id);
+    });
+
+    if (estudiantesEnProyecto.length >= 3) {
+      alert('❌ No se puede asignar más estudiantes. El proyecto seleccionado ya tiene el máximo permitido (3 estudiantes).');
+      return;
+    }
+  }
+
+  const payload = {
+    projectId: selectedProjectId,
     name: document.getElementById('est-nombre').value,
     email: document.getElementById('est-correo').value
   };
@@ -1876,6 +1907,7 @@ function cancelarEdicionEvaluacion() {
 }
 
 // 3. Handle both POST (Create) and PUT (Edit) submissions
+/*
 async function guardarEvaluacion(event) {
   event.preventDefault();
 
@@ -1966,6 +1998,250 @@ async function guardarEvaluacion(event) {
     }
   } catch (err) {
     console.error(err);
+    alert('❌ Error de conexión con el servidor');
+  }
+}
+*/
+
+/*
+async function guardarEvaluacion(event) {
+  event.preventDefault();
+
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const evalId = document.getElementById('eval-id').value;
+  const comentarios = document.getElementById('eval-comentarios').value.trim() || '';
+
+  if (!proyectoId) {
+    alert('Por favor seleccione un proyecto.');
+    return;
+  }
+
+  const total = Number(document.getElementById('eval-total').value) || 0;
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+
+  let nombreJuez = currentUser ? (currentUser.nombre || currentUser.name || currentUser.email || 'Juez') : 'Juez';
+  let juezId = currentUser ? (currentUser.id || currentUser._id || currentUser.sub || '') : '';
+
+  const inputs = document.querySelectorAll('.eval-score-input');
+
+  // Score limit validation
+  let tieneExceso = false;
+  inputs.forEach(inp => {
+    if (Number(inp.value) > 3) {
+      tieneExceso = true;
+    }
+  });
+
+  if (tieneExceso) {
+    alert('❌ Ningún criterio individual puede superar los 3 puntos.');
+    return;
+  }
+
+  const preguntasDetalle = {};
+  inputs.forEach(inp => {
+    const qKey = inp.getAttribute('data-id');
+    const qText = inp.getAttribute('data-text') || qKey;
+    const scoreVal = Number(inp.value) || 0;
+
+    preguntasDetalle[qKey] = {
+      texto: qText,
+      puntos: scoreVal
+    };
+  });
+
+  // Payload formatted with fallbacks to satisfy both flat and nested schemas
+  const payload = {
+    total: total,
+    Total: total,
+    nombreJuez: nombreJuez,
+    juezId: juezId,
+    juez: {
+      id: juezId,
+      _id: juezId,
+      nombre: nombreJuez
+    },
+    userRole: userRole,
+    comentarios: comentarios,
+    preguntasDetalle: preguntasDetalle,
+    preguntas: preguntasDetalle
+  };
+
+  const token = sessionStorage.getItem('token');
+  const isUpdate = Boolean(evalId);
+  const url = isUpdate 
+    ? `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}` 
+    : `${API_URL}/proyectos/${proyectoId}/evaluaciones`;
+  const method = isUpdate ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`✅ Evaluación ${isUpdate ? 'actualizada' : 'agregada'} con éxito`);
+
+      // Safely extract updated project object from response
+      const proyectoActualizado = data.proyecto || data.data || (data._id ? data : null);
+
+      if (proyectoActualizado) {
+        const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
+        if (proyectoIdx !== -1) {
+          proyectosCargados[proyectoIdx] = proyectoActualizado;
+        }
+      } else {
+        // Fallback: reload projects from API if payload structure varies
+        const todosProyectos = await fetchDatosAPI('proyectos');
+        if (todosProyectos) proyectosCargados = todosProyectos;
+      }
+
+      cancelarEdicionEvaluacion();
+      
+      // Force table refresh for the updated project
+      if (typeof mostrarDetalleEvaluacion === 'function') {
+        mostrarDetalleEvaluacion(proyectoId);
+      }
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
+    }
+  } catch (err) {
+    console.error('Error al guardar evaluación:', err);
+    alert('❌ Error de conexión con el servidor');
+  }
+}
+*/
+
+async function guardarEvaluacion(event) {
+  event.preventDefault();
+
+  const proyectoId = document.getElementById('select-eval-proyecto').value;
+  const evalId = document.getElementById('eval-id').value;
+  const comentarios = document.getElementById('eval-comentarios').value.trim() || '';
+
+  if (!proyectoId) {
+    alert('Por favor seleccione un proyecto.');
+    return;
+  }
+
+  const isUpdate = Boolean(evalId);
+
+  // --- MAX 3 EVALUATIONS VALIDATION ---
+  if (!isUpdate) {
+    const proyecto = proyectosCargados.find(p => p._id === proyectoId);
+    const evaluacionesExistentes = proyecto ? (proyecto.evaluacion || proyecto.evaluaciones || []) : [];
+
+    if (evaluacionesExistentes.length >= 3) {
+      alert('❌ Este proyecto ya cuenta con el número máximo permitido de 3 evaluaciones.');
+      return;
+    }
+  }
+  // ------------------------------------
+
+  const total = Number(document.getElementById('eval-total').value) || 0;
+  const userRole = obtenerRolUsuario();
+  const currentUser = obtenerUsuarioActual();
+
+  let nombreJuez = currentUser ? (currentUser.nombre || currentUser.name || currentUser.email || 'Juez') : 'Juez';
+  let juezId = currentUser ? (currentUser.id || currentUser._id || currentUser.sub || '') : '';
+
+  const inputs = document.querySelectorAll('.eval-score-input');
+
+  // Score limit validation
+  let tieneExceso = false;
+  inputs.forEach(inp => {
+    if (Number(inp.value) > 3) {
+      tieneExceso = true;
+    }
+  });
+
+  if (tieneExceso) {
+    alert('❌ Ningún criterio individual puede superar los 3 puntos.');
+    return;
+  }
+
+  const preguntasDetalle = {};
+  inputs.forEach(inp => {
+    const qKey = inp.getAttribute('data-id');
+    const qText = inp.getAttribute('data-text') || qKey;
+    const scoreVal = Number(inp.value) || 0;
+
+    preguntasDetalle[qKey] = {
+      texto: qText,
+      puntos: scoreVal
+    };
+  });
+
+  // Payload formatted with fallbacks to satisfy both flat and nested schemas
+  const payload = {
+    total: total,
+    Total: total,
+    nombreJuez: nombreJuez,
+    juezId: juezId,
+    juez: {
+      id: juezId,
+      _id: juezId,
+      nombre: nombreJuez
+    },
+    userRole: userRole,
+    comentarios: comentarios,
+    preguntasDetalle: preguntasDetalle,
+    preguntas: preguntasDetalle
+  };
+
+  const token = sessionStorage.getItem('token');
+  const url = isUpdate 
+    ? `${API_URL}/proyectos/${proyectoId}/evaluaciones/${evalId}` 
+    : `${API_URL}/proyectos/${proyectoId}/evaluaciones`;
+  const method = isUpdate ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`✅ Evaluación ${isUpdate ? 'actualizada' : 'agregada'} con éxito`);
+
+      // Safely extract updated project object from response
+      const proyectoActualizado = data.proyecto || data.data || (data._id ? data : null);
+
+      if (proyectoActualizado) {
+        const proyectoIdx = proyectosCargados.findIndex(p => p._id === proyectoId);
+        if (proyectoIdx !== -1) {
+          proyectosCargados[proyectoIdx] = proyectoActualizado;
+        }
+      } else {
+        // Fallback: reload projects from API if payload structure varies
+        const todosProyectos = await fetchDatosAPI('proyectos');
+        if (todosProyectos) proyectosCargados = todosProyectos;
+      }
+
+      cancelarEdicionEvaluacion();
+
+      // Force table refresh for the updated project
+      if (typeof mostrarDetalleEvaluacion === 'function') {
+        mostrarDetalleEvaluacion(proyectoId);
+      }
+    } else {
+      alert('❌ Error: ' + (data.message || 'No se pudo guardar la evaluación'));
+    }
+  } catch (err) {
+    console.error('Error al guardar evaluación:', err);
     alert('❌ Error de conexión con el servidor');
   }
 }
