@@ -324,7 +324,7 @@ async function guardarEstudiante(event) {
 
   await enviarDatosAPI('estudiantes', payload, cargarEstudiantes, id);
 }
-
+/*
 async function guardarJuez(event) {
   event.preventDefault();
   const id = document.getElementById('juez-id').value;
@@ -347,7 +347,53 @@ async function guardarJuez(event) {
 
   await enviarDatosAPI('jueces', payload, cargarJueces, id);
 }
+*/
 
+async function guardarJuez(event) {
+  event.preventDefault();
+  const id = document.getElementById('juez-id').value;
+  const selectProyectos = document.getElementById('juez-proyectos');
+  
+  const selectedProjects = Array.from(selectProyectos.selectedOptions)
+    .map(opt => opt.value)
+    .filter(val => val.trim() !== '');
+
+  // Fetch current judges to validate capacity per project
+  const jueces = await fetchDatosAPI('jueces');
+
+  if (jueces) {
+    for (const projId of selectedProjects) {
+      // Filter judges assigned to projId, excluding the judge currently being edited
+      const juecesEnProyecto = jueces.filter(j => {
+        if (id && String(j._id) === String(id)) return false;
+
+        const assignedIds = (j.assignedProjects || []).map(p => 
+          typeof p === 'object' && p !== null ? String(p._id || p.id) : String(p)
+        );
+        return assignedIds.includes(String(projId));
+      });
+
+      if (juecesEnProyecto.length >= 3) {
+        const optionText = selectProyectos.querySelector(`option[value="${projId}"]`)?.textContent || 'seleccionado';
+        alert(`❌ No se puede asignar el proyecto "${optionText}". Ya tiene el máximo permitido de 3 jueces.`);
+        return;
+      }
+    }
+  }
+
+  const payload = {
+    name: document.getElementById('juez-nombre').value,
+    email: document.getElementById('juez-correo').value,
+    assignedProjects: selectedProjects
+  };
+
+  const passwordVal = document.getElementById('juez-password').value;
+  if (passwordVal.trim() !== '') {
+    payload.password = passwordVal;
+  }
+
+  await enviarDatosAPI('jueces', payload, cargarJueces, id);
+}
 
 async function guardarProyecto(event) {
   event.preventDefault();

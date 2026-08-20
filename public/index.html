@@ -120,6 +120,22 @@
     }
     .header-bar h1 { font-size: 1.5rem; word-break: break-word; }
 
+    /* Header title & image container */
+    .header-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .eval-header-img {
+      height: 45px;
+      width: auto;
+      object-fit: contain;
+    }
+
+
+
+
     .view-section { display: none; }
     .view-section.active { display: block; }
 
@@ -267,6 +283,11 @@
       
       .header-bar button {
         width: 100%;
+      }
+
+      .header-title-wrapper {
+        width: 100%;
+        justify-content: space-between;
       }
 
       .form-grid { grid-template-columns: 1fr; }
@@ -665,6 +686,7 @@
     <div id="sec-evaluaciones" class="view-section">
       <div class="header-bar">
         <h1>Gestión de Evaluaciones</h1>
+        <img src="img/imagen.png" alt="Evaluaciones" class="eval-header-img">
         <button class="btn-submit" onclick="cargarEvaluaciones()">🔄 Actualizar Proyectos</button>
       </div>
 
