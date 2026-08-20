@@ -1172,6 +1172,7 @@ function validarInputPuntaje(input) {
   calcularPuntajeTotalEval();
 }
 
+/*
 async function cargarEvaluaciones() {
   const selectEl = document.getElementById('select-eval-proyecto');
   if (!selectEl) return;
@@ -1198,6 +1199,63 @@ async function cargarEvaluaciones() {
     if (assignedIds.length > 0) {
       proyectosMostrados = todosProyectos.filter(p => assignedIds.includes(p._id));
     }
+  }
+
+  selectEl.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
+
+  if (proyectosMostrados.length === 0) {
+    selectEl.innerHTML = '<option value="">No tiene proyectos asignados</option>';
+    return;
+  }
+
+  proyectosMostrados.forEach(proy => {
+    const option = document.createElement('option');
+    option.value = proy._id;
+    option.textContent = `${proy.tituloProyecto || proy.title} (${proy.centroEducativo || 'Sin Centro'}) [${proy.categoria || 'Sin Cat.'}]`;
+    selectEl.appendChild(option);
+  });
+}
+*/
+
+async function cargarEvaluaciones() {
+  const selectEl = document.getElementById('select-eval-proyecto');
+  if (!selectEl) return;
+
+  selectEl.innerHTML = '<option value="">Cargando proyectos...</option>';
+
+  const todosProyectos = await fetchDatosAPI('proyectos');
+  if (!todosProyectos || todosProyectos.length === 0) {
+    selectEl.innerHTML = '<option value="">No hay proyectos disponibles</option>';
+    return;
+  }
+
+  proyectosCargados = todosProyectos;
+  const userRole = obtenerRolUsuario();
+  let proyectosMostrados = todosProyectos;
+
+  if (userRole.toLowerCase() === 'juez') {
+    const user = obtenerUsuarioActual();
+    let assignedProjectsSource = user?.assignedProjects || [];
+
+    // Fetch judge profile from API to ensure up-to-date assignment sync
+    const todosJueces = await fetchDatosAPI('jueces');
+    if (todosJueces && todosJueces.length > 0 && user) {
+      const juezProfile = todosJueces.find(j => 
+        (user.id && String(j._id) === String(user.id)) ||
+        (user._id && String(j._id) === String(user._id)) ||
+        (user.email && j.email && j.email.toLowerCase() === user.email.toLowerCase())
+      );
+      if (juezProfile?.assignedProjects) {
+        assignedProjectsSource = juezProfile.assignedProjects;
+      }
+    }
+
+    const assignedIds = assignedProjectsSource.map(p => 
+      typeof p === 'object' && p !== null ? String(p._id || p.id) : String(p)
+    );
+
+    // Filter strictly by assigned IDs; if assignedIds is empty, filter results in []
+    proyectosMostrados = todosProyectos.filter(p => assignedIds.includes(String(p._id)));
   }
 
   selectEl.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
