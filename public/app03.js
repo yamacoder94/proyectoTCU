@@ -1240,7 +1240,7 @@ function alSeleccionarProyecto(proyectoId) {
       row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #475569; padding: 8px 0; gap: 12px;';
       row.innerHTML = `
         <label for="eval-preg-${q.id}" style="flex: 1; font-size: 0.9rem; font-weight: 500;">${q.label}</label>
-        <input type="number" class="eval-score-input" id="eval-preg-${q.id}" data-id="${q.id}" data-text="${q.label}" min="0" max="${maxPts}" value="0" style="width: 80px; text-align: center; font-weight: bold;" oninput="validarInputPuntaje(this)" required>
+        <input type="number" class="eval-score-input" id="eval-preg-${q.id}" data-id="${q.id}" data-text="${q.label}" min="0" max="${maxPts}" style="width: 80px; text-align: center; font-weight: bold;" oninput="validarInputPuntaje(this)" required>
       `;
       questionsContainer.appendChild(row);
     });
