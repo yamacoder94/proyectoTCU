@@ -353,14 +353,35 @@ async function guardarJuez(event) {
   event.preventDefault();
   const id = document.getElementById('juez-id').value;
   const selectProyectos = document.getElementById('juez-proyectos');
+  const emailInput = (document.getElementById('juez-correo')?.value || '').trim();
+
+
   
   const selectedProjects = Array.from(selectProyectos.selectedOptions)
     .map(opt => opt.value)
     .filter(val => val.trim() !== '');
 
+
   // Fetch current judges to validate capacity per project
   const jueces = await fetchDatosAPI('jueces');
 
+  // Validate duplicate Juez email
+  if (jueces) {
+    const existeDuplicado = jueces.some(juez => {
+      // Exclude the current judge when editing
+      if (id && String(juez._id) === String(id)) return false;
+
+      const emailExistente = (juez.email || '').toString().trim();
+      return emailExistente.toLowerCase() === emailInput.toLowerCase();
+    });
+
+    if (existeDuplicado) {
+      alert(`❌ Ya existe un juez registrado con el correo "${emailInput}". Por favor utilice un correo diferente.`);
+      return;
+    }
+  }
+
+  //Validates that no project has more than 3 judges assigned
   if (jueces) {
     for (const projId of selectedProjects) {
       // Filter judges assigned to projId, excluding the judge currently being edited
@@ -398,8 +419,29 @@ async function guardarJuez(event) {
 async function guardarProyecto(event) {
   event.preventDefault();
   const id = document.getElementById('proy-id').value;
+  const tituloInput = document.getElementById('proy-nombre').value.trim();
   const categoria = document.getElementById('proy-cat').value;
   const puntajeEscrito = Number(document.getElementById('proy-puntaje-escrito').value) || 0;
+
+  
+  // Validate duplicate project title
+  const proyectos = await fetchDatosAPI('proyectos');
+  
+  if (proyectos) {
+    const existeDuplicado = proyectos.some(proy => {
+      // Exclude the current project when editing
+      if (id && String(proy._id) === String(id)) return false;
+
+      const tituloExistente = (proy.tituloProyecto || proy.title || '').trim();
+      return tituloExistente.toLowerCase() === tituloInput.toLowerCase();
+    });
+
+    if (existeDuplicado) {
+      alert(`❌ Ya existe un proyecto registrado con el título "${tituloInput}". Por favor utilice un título diferente.`);
+      return;
+    }
+  }
+  
 
   // Validate maximum written score per category
   const esStem = categoria.toUpperCase().includes('STEAM') || categoria.toUpperCase().includes('STEM');
