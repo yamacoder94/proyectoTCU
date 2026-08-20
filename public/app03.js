@@ -375,7 +375,7 @@ async function guardarJuez(event) {
 
       if (juecesEnProyecto.length >= 3) {
         const optionText = selectProyectos.querySelector(`option[value="${projId}"]`)?.textContent || 'seleccionado';
-        alert(`❌ No se puede asignar el proyecto "${optionText}". Ya tiene el máximo permitido de 3 jueces.`);
+        alert(`❌ No se puede asignar el proyecto ! "${optionText}". Ya tiene el máximo permitido de 3 jueces.`);
         return;
       }
     }
